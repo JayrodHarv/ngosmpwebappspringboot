@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--
+  Fragment: footer
+  Usage: th:replace="~{fragments/footer :: footer}"
+-->
+<footer th:fragment="footer" class="bg-dark text-secondary py-3 mt-auto">
+    <div class="container text-center small">
+        <span>&copy; 2026 SMP Portal</span>
+    </div>
+</footer>
+
+<!--
+  Fragment: pagination
+  Usage: th:replace="~{fragments/footer :: pagination(baseUrl='/builds', page=${page})}"
+  Renders simple prev/next buttons. Add total-page awareness when your SP returns a count.
+-->
+<div th:fragment="pagination(baseUrl, page)" class="d-flex justify-content-center gap-2 mt-4">
+    <a th:if="${page > 0}"
+       th:href="@{${baseUrl}(page=${page - 1})}"
+       class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-chevron-left"></i> Prev
+    </a>
+    <span class="btn btn-secondary btn-sm disabled" th:text="'Page ' + (${page} + 1)"></span>
+    <a th:href="@{${baseUrl}(page=${page + 1})}"
+       class="btn btn-outline-secondary btn-sm">
+        Next <i class="bi bi-chevron-right"></i>
+    </a>
+</div>
+
+</body>
+</html>

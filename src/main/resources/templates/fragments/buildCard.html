@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+  Fragment: buildCard
+  Usage: th:replace="~{fragments/buildCard :: buildCard(build=${b})}"
+  Expects a BuildViewModel named 'build'.
+-->
+<div th:fragment="buildCard(build)" class="card h-100 shadow-sm">
+    <!-- Primary image or placeholder -->
+    <a th:href="@{/builds/{id}(id=${build.buildId})}">
+        <img th:if="${build.hasPrimaryImage()}"
+             th:src="@{/uploads/{path}(path=${build.filePath})}"
+             th:alt="${build.buildId}"
+             class="card-img-top build-card-img object-fit-cover"/>
+        <div th:unless="${build.hasPrimaryImage()}"
+             class="card-img-top build-card-img bg-secondary d-flex align-items-center justify-content-center">
+            <i class="bi bi-image text-white" style="font-size:3rem;"></i>
+        </div>
+    </a>
+
+    <div class="card-body d-flex flex-column">
+        <h5 class="card-title">
+            <a th:href="@{/builds/{id}(id=${build.buildId})}"
+               th:text="${build.buildId}"
+               class="text-decoration-none text-dark stretched-link">
+            </a>
+        </h5>
+        <p class="card-text text-muted small mb-1">
+            <i class="bi bi-person"></i>
+            <span th:text="${build.userDisplayName}">Builder</span>
+            &nbsp;·&nbsp;
+            <i class="bi bi-globe"></i>
+            <span th:text="${build.worldId ?: 'Unknown'}">World</span>
+        </p>
+        <p class="card-text text-muted small mb-1">
+            <i class="bi bi-tags"></i>
+            <span th:text="${build.buildTypeId ?: 'Uncategorized'}">Type</span>
+        </p>
+        <p class="card-text small text-truncate mt-auto" th:text="${build.buildDescription}">
+            Description
+        </p>
+    </div>
+
+    <div class="card-footer text-muted small">
+        <i class="bi bi-geo-alt"></i>
+        <span th:text="${build.coordString()}">Coords</span>
+    </div>
+</div>
+</body>
+</html>

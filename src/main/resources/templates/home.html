@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/main}">
+<head>
+    <title>Home</title>
+</head>
+<body>
+<div layout:fragment="content">
+
+    <!-- Hero -->
+    <div class="p-5 mb-4 bg-dark text-white rounded-3">
+        <div class="container-fluid py-3">
+            <h1 class="display-5 fw-bold">
+                <i class="bi bi-pickaxe me-2"></i> Welcome to SMP Portal
+            </h1>
+            <p class="col-md-8 fs-4">
+                Browse builds, vote on server decisions, and manage your Minecraft SMP world.
+            </p>
+            <a class="btn btn-success btn-lg me-2" th:href="@{/builds}">
+                <i class="bi bi-buildings"></i> Browse Builds
+            </a>
+            <a class="btn btn-outline-light btn-lg" th:href="@{/votes}">
+                <i class="bi bi-check2-square"></i> Active Votes
+            </a>
+        </div>
+    </div>
+
+    <!-- Quick stats row — could be populated from services later -->
+    <div class="row g-3 mb-4 text-center">
+        <div class="col-md-4">
+            <div class="card border-success">
+                <div class="card-body">
+                    <i class="bi bi-buildings display-6 text-success"></i>
+                    <h5 class="mt-2">Builds</h5>
+                    <p class="text-muted">Browse every creation on the server</p>
+                    <a th:href="@{/builds}" class="btn btn-sm btn-outline-success">View All</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-primary">
+                <div class="card-body">
+                    <i class="bi bi-globe display-6 text-primary"></i>
+                    <h5 class="mt-2">Worlds</h5>
+                    <p class="text-muted">See every world in the SMP</p>
+                    <a th:href="@{/worlds}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-warning">
+                <div class="card-body">
+                    <i class="bi bi-check2-square display-6 text-warning"></i>
+                    <h5 class="mt-2">Votes</h5>
+                    <p class="text-muted">Vote on upcoming server events</p>
+                    <a th:href="@{/votes}" class="btn btn-sm btn-outline-warning">View All</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>
