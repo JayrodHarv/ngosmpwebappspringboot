@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{layouts/main}">
+<head>
+    <title>Votes - SMP Portal</title>
+    <th:block layout:fragment="head">
+        <link rel="stylesheet" th:href="@{/css/votes.css}"/>
+        <script th:src="@{/js/votes.js}" defer></script>
+    </th:block>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>
+            <i class="bi bi-bar-chart-steps"></i> 
+            Community Votes
+        </h1>
+        <a th:href="@{/votes/new}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Create New Vote
+        </a>
+    </div>
+
+    <!-- Tabs -->
+    <div th:replace="~{fragments/vote/vote-tabs :: vote-tabs(${currentTab}, ${totalActive}, ${totalPending}, ${draftCount}, ${totalConcluded})}"></div>
+
+    <!-- Active/Pending/Concluded Votes Grid -->
+    <div th:if="${currentTab != 'drafts'}">
+        <div th:if="${votes.isEmpty()}" class="alert alert-info">
+            <i class="bi bi-info-circle"></i> 
+            <span th:if="${currentTab == 'active'}">No active votes at the moment.</span>
+            <span th:if="${currentTab == 'pending'}">No pending votes at the moment.</span>
+            <span th:if="${currentTab == 'concluded'}">No concluded votes yet.</span>
+        </div>
+        
+        <div class="row" th:unless="${votes.isEmpty()}">
+            <div class="col-md-6 col-lg-4 mb-4" th:each="vote : ${votes}">
+                <div th:replace="~{fragments/vote/vote-card :: standard-vote-card(${vote}, ${currentTab})}"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Draft Votes Section -->
+    <div th:if="${currentTab == 'drafts'}">
+        <div th:if="${votes.isEmpty()}" class="alert alert-info">
+            <i class="bi bi-info-circle"></i> You have no draft votes. Create one to get started!
+        </div>
+        
+        <div class="row" th:unless="${votes.isEmpty()}">
+            <div class="col-md-6 col-lg-4 mb-4" th:each="vote : ${votes}">
+                <div th:replace="~{fragments/vote/vote-card :: draft-vote-card(${vote})}"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    <div th:if="${currentTab != 'drafts'}" 
+         th:replace="~{fragments/vote/vote-pagination :: vote-pagination(${currentTab}, ${currentPage}, ${totalPages})}"></div>
+    
+    <!-- Items Info -->
+    <div th:if="${totalItems != null and totalItems > 0}" class="text-center text-muted mt-3">
+        <small>
+            Showing <span th:text="${votes.size()}">0</span> of <span th:text="${totalItems}">0</span> votes
+            <span th:if="${currentPage != null and currentPage > 1}">(Page <span th:text="${currentPage}">1</span> of <span th:text="${totalPages}">1</span>)</span>
+        </small>
+    </div>
+</div>
+</body>
+</html>

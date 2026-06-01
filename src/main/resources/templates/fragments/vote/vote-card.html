@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <!-- Standard Vote Card for Active/Pending/Concluded -->
+    <div th:fragment="standard-vote-card(vote, tab)">
+        <div class="card vote-card h-100" 
+             th:classappend="${tab == 'active'} ? 'border-success' : 
+                            (tab == 'pending' ? 'border-warning' : 'border-secondary')">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h5 class="card-title mb-0" th:text="${vote.voteId}">Vote ID</h5>
+                    <span class="badge" 
+                          th:classappend="${tab == 'active'} ? 'bg-success' : 
+                                         (tab == 'pending' ? 'bg-warning text-dark' : 'bg-secondary')">
+                        <i th:if="${tab == 'active'}" class="bi bi-play-fill"></i>
+                        <i th:if="${tab == 'pending'}" class="bi bi-clock"></i>
+                        <i th:if="${tab == 'concluded'}" class="bi bi-check-circle"></i>
+                        <span th:text="${tab}">Active</span>
+                    </span>
+                </div>
+                
+                <p class="description-preview mb-2" th:text="${vote.description}">Description</p>
+                
+                <p class="vote-stats mb-1">
+                    <i class="bi bi-person"></i> Created by: 
+                    <strong th:text="${vote.displayName}">User</strong>
+                </p>
+                
+                <p class="vote-stats mb-1">
+                    <i class="bi bi-calendar-check"></i> 
+                    Start: <span th:if="${vote.startTime}" th:text="${#temporals.format(vote.startTime, 'MMM dd, yyyy HH:mm')}">Start</span>
+                    <span th:unless="${vote.startTime}" class="text-muted">Immediate</span>
+                </p>
+                <p class="vote-stats mb-2">
+                    <i class="bi bi-calendar-x"></i> 
+                    End: <span th:if="${vote.endTime}" th:text="${#temporals.format(vote.endTime, 'MMM dd, yyyy HH:mm')}">End</span>
+                    <span th:unless="${vote.endTime}" class="text-muted">No end date</span>
+                </p>
+                
+                <div class="d-flex justify-content-between mt-3 pt-2 border-top">
+                    <div class="vote-count-badge">
+                        <i class="bi bi-list-check"></i> 
+                        <span th:text="${vote.totalOptions}">0</span> Options
+                    </div>
+                    <div class="vote-count-badge">
+                        <i class="bi bi-people"></i> 
+                        <span th:text="${vote.totalVotes}">0</span> Votes
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent">
+                <a th:href="@{/votes/{id}(id=${vote.voteId})}" 
+                   class="btn w-100" 
+                   th:classappend="${tab == 'active'} ? 'btn-outline-success' : 
+                                  (tab == 'pending' ? 'btn-outline-warning' : 'btn-outline-secondary')">
+                    <i th:if="${tab == 'active'}" class="bi bi-eye"></i>
+                    <i th:if="${tab == 'pending'}" class="bi bi-clock-history"></i>
+                    <i th:if="${tab == 'concluded'}" class="bi bi-bar-chart"></i>
+                    <span th:if="${tab == 'active'}">View & Vote</span>
+                    <span th:if="${tab == 'pending'}">View Details</span>
+                    <span th:if="${tab == 'concluded'}">View Results</span>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Draft Vote Card -->
+    <div th:fragment="draft-vote-card(vote)">
+        <div class="card vote-card h-100 border-info draft-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h5 class="card-title mb-0" th:text="${vote.voteId}">Vote ID</h5>
+                    <span class="badge bg-info">
+                        <i class="bi bi-file-earmark-text"></i> Draft
+                    </span>
+                </div>
+                
+                <p class="description-preview mb-2" th:text="${vote.description}">Description</p>
+                
+                <p class="vote-stats mb-1">
+                    <i class="bi bi-person"></i> Created by: 
+                    <strong th:text="${vote.displayName}">User</strong>
+                </p>
+                
+                <p class="vote-stats mb-2 text-muted">
+                    <i class="bi bi-info-circle"></i> This vote is still in draft mode. Add options and publish when ready.
+                </p>
+                
+                <div class="d-flex justify-content-between mt-3 pt-2 border-top">
+                    <div class="vote-count-badge">
+                        <i class="bi bi-list-check"></i> 
+                        <span th:text="${vote.totalOptions}">0</span> Options
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent">
+                <a th:href="@{/votes/{id}(id=${vote.voteId})}" class="btn btn-outline-info btn-sm w-100 mb-2">
+                    <i class="bi bi-pencil"></i> Edit Draft
+                </a>
+                <form th:action="@{/votes/{id}/publish(id=${vote.voteId})}" method="post" 
+                      onsubmit="return confirmPublish();">
+                    <button type="submit" class="btn btn-success btn-sm w-100">
+                        <i class="bi bi-rocket"></i> Publish Vote
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

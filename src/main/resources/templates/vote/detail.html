@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/main}">
+<head>
+    <title th:text="${vote.description} + ' - SMP Portal'">Vote Details</title>
+    <th:block layout:fragment="head">
+        <link rel="stylesheet" th:href="@{/css/votes.css}"/>
+        <script th:src="@{/js/votes.js}" defer></script>
+    </th:block>
+</head>
+<body>
+<div layout:fragment="content">
+    <!-- Vote Header -->
+    <div class="mb-4">
+        <div class="d-flex justify-content-between align-items-start flex-wrap">
+            <div class="flex-grow-1">
+                <a th:href="@{/votes}" class="btn btn-link text-decoration-none px-0 mb-2">
+                    <i class="bi bi-arrow-left"></i> Back to Votes
+                </a>
+                <h1 th:text="${vote.description}" class="mb-2">Vote Title</h1>
+                <div class="mb-3">
+                    <span th:if="${vote.active}" class="badge bg-success me-2">
+                        <i class="bi bi-play-fill"></i> Active
+                    </span>
+                    <span th:if="${vote.concluded}" class="badge bg-secondary me-2">
+                        <i class="bi bi-check-circle"></i> Concluded
+                    </span>
+                    <span th:if="${vote.pending}" class="badge bg-warning text-dark me-2">
+                        <i class="bi bi-clock"></i> Pending
+                    </span>
+                    <span th:if="${vote.draft}" class="badge bg-info me-2">
+                        <i class="bi bi-file-earmark-text"></i> Draft
+                    </span>
+                    <span class="badge bg-info">
+                        <i class="bi bi-person"></i> Created by: <span th:text="${vote.displayName}">User</span>
+                    </span>
+                </div>
+            </div>
+            
+            <!-- Action buttons for draft votes -->
+            <div th:if="${vote.draft and canEdit}" class="mt-2 mt-md-0">
+                <a th:href="@{/votes/{id}/edit(id=${vote.voteId})}" class="btn btn-warning me-2">
+                    <i class="bi bi-pencil"></i> Edit Vote
+                </a>
+                <form th:action="@{/votes/{id}/publish(id=${vote.voteId})}" method="post" class="d-inline"
+                      onsubmit="return confirmPublish();">
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-rocket"></i> Publish Vote
+                    </button>
+                </form>
+            </div>
+            
+            <!-- Delete button -->
+            <form th:action="@{/votes/{id}/delete(id=${vote.voteId})}" method="post" 
+                  onsubmit="return confirmDelete('${vote.voteId}');"
+                  class="mt-2 mt-md-0">
+                <button type="submit" class="btn btn-danger">
+                    <i class="bi bi-trash"></i> Delete Vote
+                </button>
+            </form>
+        </div>
+        
+        <!-- Schedule Information -->
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <div class="card bg-light">
+                    <div class="card-body py-2">
+                        <p class="mb-1">
+                            <i class="bi bi-calendar3"></i> 
+                            <strong>Start:</strong> 
+                            <span th:if="${vote.startTime}" th:text="${#temporals.format(vote.startTime, 'MMM dd, yyyy HH:mm')}">Start Date</span>
+                            <span th:unless="${vote.startTime}" class="text-muted">Not set (will start when published)</span>
+                        </p>
+                        <p class="mb-0">
+                            <i class="bi bi-calendar-x"></i> 
+                            <strong>End:</strong> 
+                            <span th:if="${vote.endTime}" th:text="${#temporals.format(vote.endTime, 'MMM dd, yyyy HH:mm')}">End Date</span>
+                            <span th:unless="${vote.endTime}" class="text-muted">No end date set</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Voting Section -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-list-check"></i> Voting Options
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div th:if="${options.isEmpty()}" class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> No options have been added to this vote yet.
+                    </div>
+                    
+                    <!-- Active Vote - Show voting form -->
+                    <div th:if="${vote.active and not hasVoted}">
+                        <form th:action="@{/votes/{id}/cast(id=${vote.voteId})}" method="post" id="voteForm">
+                            <div th:each="option : ${options}" class="option-card" 
+                                 th:onclick="|selectVoteOption(${option.optionId})|">
+                                <div class="row g-0">
+                                    <div class="col-md-4" th:if="${option.hasImage()}">
+                                        <img th:src="@{/images/{id}(id=${option.imageId})}" 
+                                             th:alt="${option.title}"
+                                             class="option-image">
+                                    </div>
+                                    <div class="col-md-4" th:unless="${option.hasImage()}">
+                                        <div class="option-image-placeholder">
+                                            <i class="bi bi-image" style="font-size: 2rem;"></i>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-8" th:classappend="${option.hasImage()} ? 'col-md-8' : 'col-md-12'">
+                                        <div class="card-body">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" 
+                                                       th:name="optionId" th:value="${option.optionId}"
+                                                       th:id="|option${option.optionId}|">
+                                                <label class="form-check-label fw-bold fs-5" 
+                                                       th:for="|option${option.optionId}|" 
+                                                       th:text="${option.title}">
+                                                    Option Title
+                                                </label>
+                                                <p class="mt-2 text-muted" 
+                                                   th:if="${option.description != null and option.description != ''}"
+                                                   th:text="${option.description}">
+                                                    Option description
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="bi bi-check2-circle"></i> Cast Your Vote
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <!-- Already Voted Message -->
+                    <div th:if="${vote.active and hasVoted}" class="alert alert-success">
+                        <i class="bi bi-check-circle-fill"></i> 
+                        You have already voted in this poll. Thank you for participating!
+                    </div>
+                    
+                    <!-- Results Display -->
+                    <div th:if="${vote.concluded or hasVoted}">
+                        <h6 class="mb-3">Results</h6>
+                        <div th:each="option : ${options}" class="mb-4">
+                            <div class="row">
+                                <div class="col-md-3" th:if="${option.hasImage()}">
+                                    <img th:src="@{/images/{id}(id=${option.imageId})}" 
+                                         th:alt="${option.title}"
+                                         class="img-fluid rounded">
+                                </div>
+                                
+                                <div class="col-md-9" th:classappend="${option.hasImage()} ? 'col-md-9' : 'col-md-12'">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <strong class="fs-5" th:text="${option.title}">Option Title</strong>
+                                        <span class="result-percent" 
+                                              th:text="${vote.totalVotes > 0 ? (option.voteCount * 100 / vote.totalVotes) + '%' : '0%'}">
+                                            0%
+                                        </span>
+                                    </div>
+                                    <div class="progress mb-2" style="height: 35px;">
+                                        <div class="progress-bar bg-success" 
+                                             role="progressbar"
+                                             th:style="'width: ' + (vote.totalVotes > 0 ? (option.voteCount * 100 / vote.totalVotes) : 0) + '%'"
+                                             th:attr="aria-valuenow=${vote.totalVotes > 0 ? (option.voteCount * 100 / vote.totalVotes) : 0}"
+                                             aria-valuemin="0" aria-valuemax="100">
+                                            <span th:if="${vote.totalVotes > 0 && (option.voteCount * 100 / vote.totalVotes) > 15}" 
+                                                  th:text="${(option.voteCount * 100 / vote.totalVotes) + '%'}"></span>
+                                        </div>
+                                    </div>
+                                    <div class="vote-count-badge">
+                                        <i class="bi bi-people"></i> 
+                                        <span th:text="${option.voteCount}">0</span> votes
+                                    </div>
+                                    <p class="mt-2 small text-muted" 
+                                       th:if="${option.description != null and option.description != ''}"
+                                       th:text="${option.description}">
+                                        Description
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="alert alert-secondary mt-3">
+                            <i class="bi bi-pie-chart"></i> 
+                            Total votes cast: <strong th:text="${vote.totalVotes}">0</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="col-lg-4 mt-4 mt-lg-0">
+            <div th:replace="~{fragments/vote-forms :: add-option-form(${vote.voteId})}"></div>
+            <div th:replace="~{fragments/vote-forms :: vote-info-card(${vote})}"></div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

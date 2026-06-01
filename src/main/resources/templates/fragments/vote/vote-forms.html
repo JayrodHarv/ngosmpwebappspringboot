@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <!-- Option Form -->
+    <div th:fragment="add-option-form(voteId)">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-plus-circle"></i> Add New Option
+                </h5>
+            </div>
+            <div class="card-body">
+                <form th:action="@{/votes/{id}/options/add(id=${voteId})}" method="post">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Option Title *</label>
+                        <input type="text" class="form-control" id="title" name="title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="imageId" class="form-label">Image ID (Optional)</label>
+                        <input type="number" class="form-control" id="imageId" name="imageId" 
+                               placeholder="Enter existing Image ID">
+                        <div class="form-text">
+                            You can add images separately through the image management system.
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-outline-primary w-100">
+                        <i class="bi bi-plus-lg"></i> Add Option
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Vote Info Card -->
+    <div th:fragment="vote-info-card(vote)">
+        <div class="card mt-3">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-info-circle"></i> Vote Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-1">
+                    <strong>Status:</strong>
+                    <span th:if="${vote.active}" class="text-success">Active</span>
+                    <span th:if="${vote.concluded}" class="text-secondary">Concluded</span>
+                    <span th:if="${vote.pending}" class="text-warning">Pending</span>
+                    <span th:if="${vote.draft}" class="text-info">Draft</span>
+                </p>
+                <p class="mb-1">
+                    <strong>Total Options:</strong> 
+                    <span th:text="${vote.totalOptions}">0</span>
+                </p>
+                <p class="mb-0">
+                    <strong>Total Participants:</strong> 
+                    <span th:text="${vote.totalVoters}">0</span>
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

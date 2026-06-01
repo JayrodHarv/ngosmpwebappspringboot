@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <div th:fragment="vote-pagination(currentTab, currentPage, totalPages)">
+        <div th:if="${totalPages > 1}" class="d-flex justify-content-center mt-4">
+            <nav aria-label="Vote pagination">
+                <ul class="pagination">
+                    <li class="page-item" th:classappend="${currentPage == 1} ? 'disabled' : ''">
+                        <a class="page-link" 
+                           th:href="@{/votes(tab=${currentTab}, page=${currentPage - 1})}" 
+                           aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                            <span class="visually-hidden">Previous</span>
+                        </a>
+                    </li>
+                    
+                    <li th:each="pageNum : ${#numbers.sequence(1, totalPages)}" 
+                        class="page-item" 
+                        th:classappend="${pageNum == currentPage} ? 'active' : ''">
+                        <a class="page-link" 
+                           th:href="@{/votes(tab=${currentTab}, page=${pageNum})}" 
+                           th:text="${pageNum}">1</a>
+                    </li>
+                    
+                    <li class="page-item" th:classappend="${currentPage == totalPages} ? 'disabled' : ''">
+                        <a class="page-link" 
+                           th:href="@{/votes(tab=${currentTab}, page=${currentPage + 1})}" 
+                           aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                            <span class="visually-hidden">Next</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</body>
+</html>

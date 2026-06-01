@@ -14,7 +14,7 @@ import java.time.LocalDate;
 
 @Controller
 @RequestMapping("/builds")
-public class BuildController {
+public class BuildController extends BaseController {
 
     private final BuildService     buildService;
     private final WorldService     worldService;

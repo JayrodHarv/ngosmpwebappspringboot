@@ -54,6 +54,10 @@ public class SecurityConfig {
                 .requestMatchers("/builds").permitAll()
                 .requestMatchers("/builds/new", "/builds/*/edit",
                                  "/builds/*/images/**").authenticated()
+
+                // Vote listing is public; details/voting requires login
+                .requestMatchers("/votes").permitAll()
+                .requestMatchers("/votes/*", "/votes/*/vote").authenticated()
                 // Admin-only sections
                 .requestMatchers("/admin/**", "/roles/**", "/users/**").hasRole("Admin")
                 // Everything else requires authentication

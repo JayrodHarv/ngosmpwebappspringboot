@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/main}">
+<head>
+    <title>Create New Vote - SMP Portal</title>
+    <th:block layout:fragment="head">
+        <style>
+            .form-section {
+                background-color: #f8f9fa;
+                border-radius: 10px;
+                padding: 1.5rem;
+                margin-bottom: 1.5rem;
+            }
+            .datetime-input-wrapper {
+                position: relative;
+            }
+        </style>
+    </th:block>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>
+            <i class="bi bi-plus-circle"></i> Create New Vote
+        </h1>
+        <a th:href="@{/votes}" class="btn btn-outline-secondary">
+            <i class="bi bi-x-circle"></i> Cancel
+        </a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <form th:action="@{/votes/new}" method="post" class="needs-validation" novalidate>
+                <!-- Basic Information -->
+                <div class="form-section">
+                    <h5 class="mb-3">
+                        <i class="bi bi-info-circle"></i> Basic Information
+                    </h5>
+                    
+                    <div class="mb-3">
+                        <label for="voteId" class="form-label">Vote ID *</label>
+                        <input type="text" class="form-control" id="voteId" name="voteId" 
+                               placeholder="e.g., community_feedback_2024" required>
+                        <div class="form-text">
+                            A unique identifier for this vote (letters, numbers, and underscores only).
+                        </div>
+                        <div class="invalid-feedback">
+                            Please provide a unique Vote ID.
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description *</label>
+                        <textarea class="form-control" id="description" name="description" 
+                                  rows="3" placeholder="What is this vote about?" required></textarea>
+                        <div class="invalid-feedback">
+                            Please provide a description.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Schedule Information -->
+                <div class="form-section">
+                    <h5 class="mb-3">
+                        <i class="bi bi-calendar-event"></i> Schedule (Optional)
+                    </h5>
+                    <p class="text-muted small mb-3">
+                        Leave empty for immediate start and no end date.
+                    </p>
+                    
+                    <div class="mb-3">
+                        <label for="startTime" class="form-label">Start Time</label>
+                        <input type="datetime-local" class="form-control" id="startTime" name="startTime">
+                        <div class="form-text">
+                            When should voting begin? Leave empty to start immediately.
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="endTime" class="form-label">End Time</label>
+                        <input type="datetime-local" class="form-control" id="endTime" name="endTime">
+                        <div class="form-text">
+                            When should voting end? Leave empty for no end date.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Guidelines -->
+                <div class="alert alert-info mb-4">
+                    <i class="bi bi-lightbulb"></i>
+                    <strong>Tips for creating a good vote:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>Use a clear and descriptive Vote ID</li>
+                        <li>Write a detailed description so everyone understands the context</li>
+                        <li>Set appropriate start and end times to give everyone a chance to vote</li>
+                        <li>You can add voting options after creating the vote</li>
+                    </ul>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="d-flex gap-3">
+                    <button type="submit" class="btn btn-primary flex-grow-1">
+                        <i class="bi bi-check-lg"></i> Create Vote
+                    </button>
+                    <button type="reset" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-repeat"></i> Reset
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<th:block layout:fragment="scripts">
+    <script>
+        // Bootstrap form validation
+        (function() {
+            'use strict';
+            const forms = document.querySelectorAll('.needs-validation');
+            Array.from(forms).forEach(form => {
+                form.addEventListener('submit', event => {
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
+                }, false);
+            });
+        })();
+
+        // Set default datetime-local values to current time in local timezone
+        document.addEventListener('DOMContentLoaded', function() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const currentDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+            
+            // Set start time default to now
+            const startTimeInput = document.getElementById('startTime');
+            if (startTimeInput && !startTimeInput.value) {
+                startTimeInput.value = currentDateTime;
+            }
+        });
+    </script>
+</th:block>
+</body>
+</html>

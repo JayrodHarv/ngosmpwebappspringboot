@@ -2,6 +2,7 @@ package com.jayrodharv.ngosmpwebappspringboot.controller;
 
 import com.jayrodharv.ngosmpwebappspringboot.model.Vote;
 import com.jayrodharv.ngosmpwebappspringboot.model.VoteOption;
+import com.jayrodharv.ngosmpwebappspringboot.model.VoteVM;
 import com.jayrodharv.ngosmpwebappspringboot.service.VoteService;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -17,15 +18,61 @@ import java.time.LocalDateTime;
 public class VoteController {
 
     private final VoteService voteService;
+    private final int PAGE_SIZE = 10;
 
     public VoteController(VoteService voteService) {
         this.voteService = voteService;
     }
 
-    @GetMapping
-    public String list(Model model) {
-        model.addAttribute("activeVotes",    voteService.findActive());
-        model.addAttribute("concludedVotes", voteService.findConcluded());
+     @GetMapping
+    public String list(
+            @RequestParam(defaultValue = "active") String tab,
+            @RequestParam(defaultValue = "1") int page,
+            @AuthenticationPrincipal UserDetails principal,
+            Model model) {
+        
+        String userId = principal != null ? principal.getUsername() : null;
+        
+        switch (tab) {
+            case "active":
+                int totalActive = voteService.countActiveVotes();
+                int activeTotalPages = (int) Math.ceil((double) totalActive / PAGE_SIZE);
+                model.addAttribute("votes", voteService.findActiveVotes(page, PAGE_SIZE));
+                model.addAttribute("totalPages", activeTotalPages);
+                model.addAttribute("totalItems", totalActive);
+                model.addAttribute("currentTab", "active");
+                break;
+                
+            case "pending":
+                int totalPending = voteService.countPendingVotes();
+                int pendingTotalPages = (int) Math.ceil((double) totalPending / PAGE_SIZE);
+                model.addAttribute("votes", voteService.findPendingVotes(userId, page, PAGE_SIZE));
+                model.addAttribute("totalPages", pendingTotalPages);
+                model.addAttribute("totalItems", totalPending);
+                model.addAttribute("currentTab", "pending");
+                break;
+                
+            case "concluded":
+                int totalConcluded = voteService.countConcludedVotes();
+                int concludedTotalPages = (int) Math.ceil((double) totalConcluded / PAGE_SIZE);
+                model.addAttribute("votes", voteService.findConcludedVotes(page, PAGE_SIZE));
+                model.addAttribute("totalPages", concludedTotalPages);
+                model.addAttribute("totalItems", totalConcluded);
+                model.addAttribute("currentTab", "concluded");
+                break;
+                
+            case "drafts":
+                if (userId != null) {
+                    int totalDrafts = voteService.countDraftVotes();
+                    model.addAttribute("votes", voteService.findDraftVotes(userId, page, PAGE_SIZE));
+                    model.addAttribute("totalItems", totalDrafts);
+                    model.addAttribute("currentTab", "drafts");
+                }
+                break;
+        }
+        
+        model.addAttribute("currentPage", page);
+        model.addAttribute("pageSize", PAGE_SIZE);
         return "vote/list";
     }
 
@@ -33,8 +80,7 @@ public class VoteController {
     public String detail(@PathVariable String voteId,
                          @AuthenticationPrincipal UserDetails principal,
                          Model model) {
-        Vote vote = voteService.findById(voteId)
-                .orElseThrow(() -> new IllegalArgumentException("Vote not found"));
+        VoteVM vote = voteService.findById(voteId);
         model.addAttribute("vote",    vote);
         model.addAttribute("options", voteService.findOptions(voteId));
         return "vote/detail";

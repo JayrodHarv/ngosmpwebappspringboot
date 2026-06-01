@@ -1253,6 +1253,20 @@ BEGIN
     ;
 END;
 
+-- Publish/Start a vote
+DROP PROCEDURE IF EXISTS sp_publish_vote;
+CREATE PROCEDURE sp_publish_vote(
+    IN p_VoteID VARCHAR(255),
+    IN p_StartTime DATETIME,
+    IN p_EndTime DATETIME
+)
+BEGIN
+    UPDATE Vote
+    SET StartTime = p_StartTime,
+        EndTime = p_EndTime
+    WHERE VoteID = p_VoteID;
+END;
+
 /* DELETE Vote */
 DROP PROCEDURE IF EXISTS sp_delete_vote;
 CREATE PROCEDURE sp_delete_vote(
@@ -1264,9 +1278,9 @@ BEGIN
     ;
 END;
 
-/* GET My Votes */
-DROP PROCEDURE IF EXISTS sp_get_myvotes;
-CREATE PROCEDURE sp_get_myvotes(
+/* GET Votes by UserID */
+DROP PROCEDURE IF EXISTS sp_get_votes_by_user;
+CREATE PROCEDURE sp_get_votes_by_user(
     IN p_UserID VARCHAR(255)
 )
 BEGIN
@@ -1279,33 +1293,180 @@ BEGIN
 END;
 
 /* GET Active Votes */
+-- DROP PROCEDURE IF EXISTS sp_get_active_votes;
+-- CREATE PROCEDURE sp_get_active_votes()
+-- BEGIN
+--     SELECT v.VoteID, v.UserID, Description, StartTime, EndTime, COUNT(uv.UserID) AS 'num_of_votes', u.DisplayName
+--     FROM Vote AS v
+--     LEFT JOIN UserVote AS uv ON v.VoteID = uv.VoteID
+--     INNER JOIN User AS u ON v.UserID = u.UserID
+--     WHERE StartTime IS NOT NULL AND EndTime IS NOT NULL
+--     AND StartTime <= CURRENT_TIMESTAMP AND EndTime > CURRENT_TIMESTAMP
+--     GROUP BY v.VoteID, v.UserID, Description, StartTime, EndTime, u.DisplayName
+--     ORDER BY EndTime DESC
+--     ;
+-- END;
+
 DROP PROCEDURE IF EXISTS sp_get_active_votes;
-CREATE PROCEDURE sp_get_active_votes()
+CREATE PROCEDURE sp_get_active_votes(
+    IN p_limit INT,
+    IN p_offset INT
+)
 BEGIN
-    SELECT v.VoteID, v.UserID, Description, StartTime, EndTime, COUNT(uv.UserID) AS 'num_of_votes', u.DisplayName
-    FROM Vote AS v
-    LEFT JOIN UserVote AS uv ON v.VoteID = uv.VoteID
-    INNER JOIN User AS u ON v.UserID = u.UserID
-    WHERE StartTime IS NOT NULL AND EndTime IS NOT NULL
-    AND StartTime <= CURRENT_TIMESTAMP AND EndTime > CURRENT_TIMESTAMP
-    GROUP BY v.VoteID, v.UserID, Description, StartTime, EndTime, u.DisplayName
-    ORDER BY EndTime DESC
-    ;
+    SELECT 
+        v.VoteID,
+        v.UserID,
+        v.Description,
+        v.StartTime,
+        v.EndTime,
+        u.DisplayName,
+        COUNT(DISTINCT vo.OptionID) AS total_options,
+        COUNT(uv.UserID) AS total_votes
+    FROM Vote v
+    INNER JOIN User u ON v.UserID = u.UserID
+    LEFT JOIN VoteOption vo ON v.VoteID = vo.VoteID
+    LEFT JOIN UserVote uv ON v.VoteID = uv.VoteID
+    WHERE v.StartTime IS NOT NULL
+        AND v.EndTime IS NOT NULL
+        AND v.StartTime <= CURRENT_TIMESTAMP
+        AND v.EndTime > CURRENT_TIMESTAMP
+    GROUP BY v.VoteID, v.UserID, v.Description, v.StartTime, v.EndTime, u.DisplayName
+    ORDER BY v.EndTime ASC
+    LIMIT p_limit OFFSET p_offset;
 END;
 
-/* GET Concluded Votes */
-DROP PROCEDURE IF EXISTS sp_get_concluded_votes;
-CREATE PROCEDURE sp_get_concluded_votes()
+-- Get Count of Active Votes
+DROP PROCEDURE IF EXISTS sp_count_active_votes;
+CREATE PROCEDURE sp_count_active_votes()
 BEGIN
-    SELECT v.VoteID, v.UserID, Description, StartTime, EndTime, COUNT(uv.UserID) AS 'num_of_votes', u.DisplayName
-    FROM Vote AS v
-    LEFT JOIN UserVote AS uv ON v.VoteID = uv.VoteID
-    INNER JOIN User AS u ON v.UserID = u.UserID
-    WHERE StartTime IS NOT NULL AND EndTime IS NOT NULL
-    AND EndTime < CURRENT_TIMESTAMP
-    GROUP BY v.VoteID, v.UserID, Description, StartTime, EndTime, u.DisplayName
-    ORDER BY EndTime DESC
-    ;
+    SELECT COUNT(*) AS total
+    FROM Vote v
+    WHERE v.StartTime IS NOT NULL 
+      AND v.EndTime IS NOT NULL
+      AND v.StartTime <= CURRENT_TIMESTAMP 
+      AND v.EndTime > CURRENT_TIMESTAMP;
+END;
+
+-- Get Pending Votes with Pagination (user's votes first)
+DROP PROCEDURE IF EXISTS sp_get_pending_votes;
+CREATE PROCEDURE sp_get_pending_votes(
+    IN p_userId VARCHAR(255),
+    IN p_limit INT,
+    IN p_offset INT
+)
+BEGIN
+    SELECT 
+        v.VoteID,
+        v.UserID,
+        v.Description,
+        v.StartTime,
+        v.EndTime,
+        u.DisplayName,
+        COUNT(DISTINCT vo.OptionID) AS total_options,
+        COUNT(uv.UserID) AS total_votes,
+        -- Flag to indicate if current user created this vote
+        CASE WHEN v.UserID = p_userId THEN 1 ELSE 0 END AS is_created_by_user
+    FROM Vote v
+    INNER JOIN User u ON v.UserID = u.UserID
+    LEFT JOIN VoteOption vo ON v.VoteID = vo.VoteID
+    LEFT JOIN UserVote uv ON v.VoteID = uv.VoteID
+    WHERE (v.StartTime IS NULL OR v.StartTime > CURRENT_TIMESTAMP)
+      AND (v.EndTime IS NULL OR v.EndTime > CURRENT_TIMESTAMP)
+    GROUP BY v.VoteID, v.UserID, v.Description, v.StartTime, v.EndTime, u.DisplayName
+    ORDER BY is_created_by_user DESC, v.StartTime ASC
+    LIMIT p_limit OFFSET p_offset;
+END;
+
+-- Get Count of Pending Votes
+DROP PROCEDURE IF EXISTS sp_count_pending_votes;
+CREATE PROCEDURE sp_count_pending_votes()
+BEGIN
+    SELECT COUNT(*) AS total
+    FROM Vote v
+    WHERE (v.StartTime IS NULL OR v.StartTime > CURRENT_TIMESTAMP)
+      AND (v.EndTime IS NULL OR v.EndTime > CURRENT_TIMESTAMP);
+END;
+
+-- Get Draft Votes (votes with no start time)
+DROP PROCEDURE IF EXISTS sp_get_draft_votes;
+CREATE PROCEDURE sp_get_draft_votes(
+    IN p_UserID VARCHAR(255),
+    IN p_limit INT,
+    IN p_offset INT
+)
+BEGIN
+    SELECT 
+        v.VoteID,
+        v.UserID,
+        v.Description,
+        v.StartTime,
+        v.EndTime,
+        u.DisplayName,
+        COUNT(DISTINCT vo.OptionID) AS total_options,
+        COUNT(uv.UserID) AS total_votes,
+        COUNT(DISTINCT uv.UserID) AS total_voters
+    FROM Vote v
+    INNER JOIN User u ON v.UserID = u.UserID
+    LEFT JOIN VoteOption vo ON v.VoteID = vo.VoteID
+    LEFT JOIN UserVote uv ON v.VoteID = uv.VoteID
+    WHERE v.UserID = p_UserID
+      AND v.StartTime IS NULL
+      AND v.EndTime IS NULL
+    GROUP BY v.VoteID, v.UserID, v.Description, v.StartTime, v.EndTime, u.DisplayName
+    ORDER BY v.CreatedAt DESC
+    LIMIT p_limit OFFSET p_offset;
+END;
+
+-- Get Draft Votes Count
+DROP PROCEDURE IF EXISTS sp_count_draft_votes;
+CREATE PROCEDURE sp_count_draft_votes(
+    IN p_UserID VARCHAR(255)
+)
+BEGIN
+    SELECT COUNT(*) AS total
+    FROM Vote v
+    WHERE v.UserID = p_UserID
+      AND v.StartTime IS NULL
+      AND v.EndTime IS NULL;
+END;
+
+-- Get Concluded Votes with Pagination
+DROP PROCEDURE IF EXISTS sp_get_concluded_votes;
+CREATE PROCEDURE sp_get_concluded_votes(
+    IN p_limit INT,
+    IN p_offset INT
+)
+BEGIN
+    SELECT 
+        v.VoteID,
+        v.UserID,
+        v.Description,
+        v.StartTime,
+        v.EndTime,
+        u.DisplayName,
+        COUNT(DISTINCT vo.OptionID) AS total_options,
+        COUNT(uv.UserID) AS total_votes
+    FROM Vote v
+    INNER JOIN User u ON v.UserID = u.UserID
+    LEFT JOIN VoteOption vo ON v.VoteID = vo.VoteID
+    LEFT JOIN UserVote uv ON v.VoteID = uv.VoteID
+    WHERE v.StartTime IS NOT NULL 
+      AND v.EndTime IS NOT NULL
+      AND v.EndTime < CURRENT_TIMESTAMP
+    GROUP BY v.VoteID, v.UserID, v.Description, v.StartTime, v.EndTime, u.DisplayName
+    ORDER BY v.EndTime DESC
+    LIMIT p_limit OFFSET p_offset;
+END;
+
+-- Get Count of Concluded Votes
+DROP PROCEDURE IF EXISTS sp_count_concluded_votes;
+CREATE PROCEDURE sp_count_concluded_votes()
+BEGIN
+    SELECT COUNT(*) AS total
+    FROM Vote v
+    WHERE v.StartTime IS NOT NULL 
+      AND v.EndTime IS NOT NULL
+      AND v.EndTime < CURRENT_TIMESTAMP;
 END;
 
 /* GET Vote */
@@ -1314,12 +1475,19 @@ CREATE PROCEDURE sp_get_vote(
     IN p_VoteID VARCHAR(255)
 )
 BEGIN
-    SELECT v.VoteID, v.UserID, v.Description, StartTime, EndTime, COUNT(vo.VoteID) AS 'num_of_options', u.DisplayName
-    FROM Vote AS v
-    LEFT JOIN VoteOption AS vo ON v.VoteID = vo.VoteID
+    SELECT  v.VoteID,
+            v.UserID,
+            v.Description,
+            StartTime,
+            EndTime,
+            u.DisplayName,
+            COUNT(DISTINCT vo.VoteID) AS 'total_options',
+            COUNT(uv.UserID) AS 'total_votes'
+    FROM Vote v
     INNER JOIN User AS u ON v.UserID = u.UserID
+    LEFT JOIN VoteOption vo ON v.VoteID = vo.VoteID
+    LEFT JOIN UserVote uv ON uv.UserID = v.UserID
     WHERE v.VoteID = p_VoteID
-    GROUP BY v.VoteID, v.UserID, v.Description, StartTime, EndTime, u.DisplayName
     ;
 END;
 
@@ -1347,13 +1515,13 @@ CREATE PROCEDURE sp_update_voteoption(
     IN p_OptionID INT,
     IN p_Title VARCHAR(255),
     IN p_Description TEXT,
-    IN p_Image LONGBLOB
+    IN p_ImageID
 )
 BEGIN
     UPDATE VoteOption
     SET Title = p_Title,
         Description = p_Description,
-        Image = p_Image
+        ImageID = p_ImageID
     WHERE OptionID = p_OptionID
     ;
 END;
@@ -1375,11 +1543,11 @@ CREATE PROCEDURE sp_get_voteoptions(
     IN p_VoteID VARCHAR(255)
 )
 BEGIN
-    SELECT vo.OptionID, vo.VoteID, Title, Description, Image, COUNT(uv.UserID) AS 'number_of_votes'
-    FROM VoteOption AS vo
-    LEFT JOIN UserVote AS uv ON vo.OptionID = uv.OptionID
+    SELECT vo.OptionID, vo.VoteID, Title, Description, vo.ImageID, COUNT(uv.UserID) AS 'total_votes'
+    FROM VoteOption vo
+    LEFT JOIN UserVote uv ON vo.OptionID = uv.OptionID
     WHERE vo.VoteID = p_VoteID
-    GROUP BY vo.OptionID, Title, Description, Image
+    GROUP BY vo.OptionID, Title, Description, vo.ImageID
     ;
 END;
 
@@ -1389,7 +1557,7 @@ CREATE PROCEDURE sp_get_voteoption(
     IN p_OptionID INT
 )
 BEGIN
-    SELECT OptionID, VoteID, Title, Description, Image
+    SELECT OptionID, VoteID, Title, Description, ImageID
     FROM VoteOption
     WHERE OptionID = p_OptionID
     ;

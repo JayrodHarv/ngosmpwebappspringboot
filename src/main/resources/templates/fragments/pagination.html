@@ -1,0 +1,45 @@
+<!-- 
+    Simple Pagination Fragment with Previous/Next buttons and page info
+    Uses 1-indexed pages (page 1 = first page)
+    
+    Parameters:
+    - baseUrl: The base URL for pagination links (e.g., "/votes", "/builds")
+    - currentPage: Current page number (1-indexed)
+    - totalPages: Total number of pages
+    - additionalParams: Additional query parameters to preserve (optional)
+-->
+<div th:fragment="pagination(baseUrl, currentPage, totalPages, additionalParams)"
+     th:remove="tag">
+    
+    <nav th:if="${totalPages > 1}" class="mt-4 d-flex justify-content-center" aria-label="Pagination">
+        <ul class="pagination">
+            <!-- Previous Button -->
+            <li class="page-item" th:classappend="${currentPage == 1} ? 'disabled' : ''">
+                <a class="page-link" 
+                   th:href="@{${baseUrl}(page=${currentPage - 1}, ${additionalParams})}"
+                   aria-label="Previous">
+                    <i class="bi bi-chevron-left"></i>
+                    <span class="visually-hidden">Previous</span>
+                </a>
+            </li>
+            
+            <!-- Current Page Info -->
+            <li class="page-item disabled">
+                <span class="page-link">
+                    Page <span th:text="${currentPage}">1</span> of <span th:text="${totalPages}">1</span>
+                </span>
+            </li>
+            
+            <!-- Next Button -->
+            <li class="page-item" th:classappend="${currentPage == totalPages} ? 'disabled' : ''">
+                <a class="page-link" 
+                   th:href="@{${baseUrl}(page=${currentPage + 1}, ${additionalParams})}"
+                   aria-label="Next">
+                    <i class="bi bi-chevron-right"></i>
+                    <span class="visually-hidden">Next</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    
+</div>

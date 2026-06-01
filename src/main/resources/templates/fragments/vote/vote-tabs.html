@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <div th:fragment="vote-tabs(currentTab, totalActive, totalPending, totalDrafts, totalConcluded)">
+        <ul class="nav nav-tabs mb-4" id="voteTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" th:classappend="${currentTab == 'active'} ? 'active' : ''" 
+                   th:href="@{/votes(tab='active', page=1)}" role="tab">
+                    <i class="bi bi-play-circle-fill text-success"></i> Active Votes
+                    <span class="badge bg-success ms-1" th:text="${totalActive != null ? totalActive : 0}">0</span>
+                </a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" th:classappend="${currentTab == 'pending'} ? 'active' : ''" 
+                   th:href="@{/votes(tab='pending', page=1)}" role="tab">
+                    <i class="bi bi-clock-fill text-warning"></i> Pending Votes
+                    <span class="badge bg-warning text-dark ms-1" th:text="${totalPending != null ? totalPending : 0}">0</span>
+                </a>
+            </li>
+            <li class="nav-item" role="presentation" sec:authorize="isAuthenticated()">
+                <a class="nav-link" th:classappend="${currentTab == 'drafts'} ? 'active' : ''" 
+                   th:href="@{/votes(tab='drafts', page=1)}" role="tab">
+                    <i class="bi bi-file-earmark-text text-info"></i> My Drafts
+                    <span class="badge bg-info ms-1" th:text="${totalDrafts != null ? totalDrafts : 0}">0</span>
+                </a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" th:classappend="${currentTab == 'concluded'} ? 'active' : ''" 
+                   th:href="@{/votes(tab='concluded', page=1)}" role="tab">
+                    <i class="bi bi-check-circle-fill text-secondary"></i> Concluded Votes
+                    <span class="badge bg-secondary ms-1" th:text="${totalConcluded != null ? totalConcluded : 0}">0</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+</body>
+</html>

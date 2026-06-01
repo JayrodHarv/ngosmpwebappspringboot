@@ -14,7 +14,6 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Image {
-
     private Integer imageId;
     private String fileName;
     private String mimeType;
