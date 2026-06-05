@@ -57,12 +57,15 @@
 
         <!-- World -->
         <div class="col-12 col-sm-6">
-            <label for="worldId" class="form-label">World</label>
+            <label for="worldId" class="form-label">
+                World <span class="text-danger">*</span>
+            </label>
             <select id="worldId" name="worldId" class="form-select">
                 <option value="">— None —</option>
                 <option th:each="w : ${worlds}"
                         th:value="${w.worldId}"
                         th:text="${w.worldId}"
+                        required
                         th:selected="${build != null and build.worldId == w.worldId}">
                 </option>
             </select>
@@ -70,12 +73,15 @@
 
         <!-- Build Type -->
         <div class="col-12 col-sm-6">
-            <label for="buildTypeId" class="form-label">Build Type</label>
+            <label for="buildTypeId" class="form-label">
+                Build Type <span class="text-danger">*</span>
+            </label>
             <select id="buildTypeId" name="buildTypeId" class="form-select">
                 <option value="">— Uncategorized —</option>
                 <option th:each="bt : ${buildTypes}"
                         th:value="${bt.buildTypeId}"
                         th:text="${bt.buildTypeId}"
+                        required
                         th:selected="${build != null and build.buildTypeId == bt.buildTypeId}">
                 </option>
             </select>

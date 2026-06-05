@@ -31,8 +31,8 @@ public class BuildController extends BaseController {
     // ── LIST ──────────────────────────────────────────────────────────────────
 
     @GetMapping
-    public String list(@RequestParam(defaultValue = "0")    int    page,
-                       @RequestParam(defaultValue = "12")   int    size,
+    public String list(@RequestParam(defaultValue = "0") int page,
+                       @RequestParam(defaultValue = "10") int size,
                        @RequestParam(required = false) String worldId,
                        @RequestParam(required = false) String buildTypeId,
                        @RequestParam(required = false) String displayName,
@@ -67,8 +67,8 @@ public class BuildController extends BaseController {
 
     @PostMapping("/new")
     public String create(@RequestParam String buildId,
-                         @RequestParam(required = false) String worldId,
-                         @RequestParam(required = false) String buildTypeId,
+                         @RequestParam String worldId,
+                         @RequestParam String buildTypeId,
                          @RequestParam(required = false) String dateBuilt,
                          @RequestParam(required = false) Integer xCoord,
                          @RequestParam(required = false) Integer yCoord,

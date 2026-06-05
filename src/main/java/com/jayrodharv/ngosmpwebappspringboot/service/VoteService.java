@@ -45,8 +45,8 @@ public class VoteService {
         int offset = (page - 1) * size;
         return voteDao.findDraftVotes(userId, size, offset);
     }
-    public int countDraftVotes() {
-        return voteDao.countDraftVotes();
+    public int countDraftVotes(String userId) {
+        return voteDao.countDraftVotes(userId);
     }
 
     public List<VoteVM> findConcludedVotes(int page, int size) {

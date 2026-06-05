@@ -142,9 +142,10 @@ public class VoteDAO {
         return jdbc.query("CALL sp_get_draft_votes(:userId, :limit, :offset)", params, VOTE_VM_MAPPER);
     }
 
-    public int countDraftVotes() {
+    public int countDraftVotes(String userId) {
         MapSqlParameterSource params = new MapSqlParameterSource();
-        Integer count = jdbc.queryForObject("CALL sp_count_draft_votes()", params, Integer.class);
+        params.addValue("userId", userId);
+        Integer count = jdbc.queryForObject("CALL sp_count_draft_votes(:userId)", params, Integer.class);
         return count != null ? count : 0;
     }
 

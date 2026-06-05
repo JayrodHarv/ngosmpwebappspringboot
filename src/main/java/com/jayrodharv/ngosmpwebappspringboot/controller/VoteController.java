@@ -63,7 +63,7 @@ public class VoteController {
                 
             case "drafts":
                 if (userId != null) {
-                    int totalDrafts = voteService.countDraftVotes();
+                    int totalDrafts = voteService.countDraftVotes(userId);
                     model.addAttribute("votes", voteService.findDraftVotes(userId, page, PAGE_SIZE));
                     model.addAttribute("totalItems", totalDrafts);
                     model.addAttribute("currentTab", "drafts");

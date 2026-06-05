@@ -207,6 +207,7 @@ CREATE TABLE Vote (
 	Description TEXT NOT NULL,
 	StartTime DATETIME NULL,
 	EndTime DATETIME NULL,
+    CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_Vote_UserID FOREIGN KEY(UserID)
         REFERENCES User(UserID)
             ON UPDATE CASCADE
@@ -1499,13 +1500,13 @@ CREATE PROCEDURE sp_insert_voteoption(
     IN p_VoteID VARCHAR(255),
     IN p_Title VARCHAR(255),
     IN p_Description TEXT,
-    IN p_Image LONGBLOB
+    IN p_ImageID INT
 )
 BEGIN
     INSERT INTO VoteOption
-        (VoteID, Title, Description, Image)
+        (VoteID, Title, Description, ImageID)
     VALUES
-        (p_VoteID, p_Title, p_Description, p_Image)
+        (p_VoteID, p_Title, p_Description, p_ImageID)
     ;
 END;
 
@@ -1515,7 +1516,7 @@ CREATE PROCEDURE sp_update_voteoption(
     IN p_OptionID INT,
     IN p_Title VARCHAR(255),
     IN p_Description TEXT,
-    IN p_ImageID
+    IN p_ImageID INT
 )
 BEGIN
     UPDATE VoteOption
@@ -1581,32 +1582,6 @@ BEGIN
     ;
 END;
 
-/* UPDATE VoteOption */
-DROP PROCEDURE IF EXISTS sp_update_voteoption;
-CREATE PROCEDURE sp_update_voteoption(
-    IN p_OptionID INT,
-    IN p_Title VARCHAR(255),
-    IN p_Description TEXT,
-    IN p_Image LONGBLOB
-)
-BEGIN
-    UPDATE VoteOption
-    SET Title = p_Title,
-        Description = p_Description,
-        Image = p_Image
-    WHERE OptionID = p_OptionID
-    ;
-END;
-/* DELETE VoteOption */
-DROP PROCEDURE IF EXISTS sp_delete_voteoption;
-CREATE PROCEDURE sp_delete_voteoption(
-    IN p_OptionID INT
-)
-BEGIN
-    DELETE FROM VoteOption
-    WHERE OptionID = p_OptionID
-    ;
-END;
 /* GET UserVotes */
 DROP PROCEDURE IF EXISTS sp_get_uservotes;
 CREATE PROCEDURE sp_get_uservotes(
@@ -1616,17 +1591,6 @@ BEGIN
     SELECT UserID, VoteID, OptionID, VoteTime
     FROM UserVote
     WHERE VoteID = p_VoteID
-    ;
-END;
-/* GET VoteOption */
-DROP PROCEDURE IF EXISTS sp_get_voteoption;
-CREATE PROCEDURE sp_get_voteoption(
-    IN p_OptionID INT
-)
-BEGIN
-    SELECT OptionID, Title, Description, Image
-    FROM VoteOption
-    WHERE OptionID = p_OptionID
     ;
 END;
 

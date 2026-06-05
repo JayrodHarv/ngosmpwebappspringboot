@@ -109,20 +109,19 @@ public class UserDAO {
         return results.stream().findFirst();
     }
 
-    public void insert(String userId, String hashedPassword, String displayName) {
+    public void insert(String email, String hashedPassword, String displayName) {
         MapSqlParameterSource p = new MapSqlParameterSource();
-        p.addValue("userId",       userId);
-        p.addValue("password",     hashedPassword);
-        p.addValue("displayName",  displayName);
-        jdbc.update("CALL sp_insert_user(:userId, :password, :displayName)", p);
+        p.addValue("email", email);
+        p.addValue("password_hash",     hashedPassword);
+        p.addValue("display_name",  displayName);
+        jdbc.update("CALL sp_insert_user(:email, :password_hash, :display_name)", p);
     }
 
     public void update(User user) {
         MapSqlParameterSource p = new MapSqlParameterSource();
-        p.addValue("userId",       user.getUserId());
-        p.addValue("displayName",  user.getDisplayName());
-        p.addValue("pfpImageId",   user.getPfpImageId());
-        p.addValue("language",     user.getLanguage());
+        p.addValue("user_id",       user.getUserId());
+        p.addValue("display_name",  user.getDisplayName());
+        p.addValue("pfp_image_id",   user.getPfpImageId());
         p.addValue("status",       user.getStatus());
         p.addValue("roleId",       user.getRoleId());
         p.addValue("lastLoggedIn", user.getLastLoggedIn());
