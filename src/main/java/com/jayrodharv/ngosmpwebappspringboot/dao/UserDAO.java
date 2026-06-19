@@ -1,149 +1,221 @@
 package com.jayrodharv.ngosmpwebappspringboot.dao;
 
-import org.springframework.jdbc.core.RowMapper;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.core.simple.SimpleJdbcCall;
 import org.springframework.stereotype.Repository;
 
-import com.jayrodharv.ngosmpwebappspringboot.model.User;
-import com.jayrodharv.ngosmpwebappspringboot.model.UserVM;
+import com.jayrodharv.ngosmpwebappspringboot.dto.PermissionDTO;
+import com.jayrodharv.ngosmpwebappspringboot.dto.RoleDTO;
+import com.jayrodharv.ngosmpwebappspringboot.dto.user.UserAccountDTO;
+import com.jayrodharv.ngosmpwebappspringboot.dto.user.UserDTO;
+import com.jayrodharv.ngosmpwebappspringboot.dto.user.UserLoginDTO;
+import com.jayrodharv.ngosmpwebappspringboot.dto.user.UserProfileDTO;
+import com.jayrodharv.ngosmpwebappspringboot.pagination.PageRequest;
 
-import java.util.List;
-import java.util.Optional;
+import lombok.RequiredArgsConstructor;
 
 @Repository
+@RequiredArgsConstructor
 public class UserDAO {
 
-    private final NamedParameterJdbcTemplate jdbc;
+    private final JdbcTemplate jdbc;
 
-    public UserDAO(NamedParameterJdbcTemplate jdbc) {
-        this.jdbc = jdbc;
+    public Integer registerUser(
+        String email,
+        String displayName,
+        String passwordHash
+    ) throws DataAccessException {
+        
+        SimpleJdbcCall call = new SimpleJdbcCall(jdbc).withProcedureName("sp_register_user");
+
+        Map<String, Object> result = call.execute(
+            new MapSqlParameterSource()
+                .addValue("p_email", email)
+                .addValue("p_display_name", displayName)
+                .addValue("p_password_hash", passwordHash)
+        );
+
+        return ((Integer) result.get("p_user_id"));
     }
 
-    // ── Row Mappers ───────────────────────────────────────────────────────────
+    public UserLoginDTO loginUser(String email) throws DataAccessException {
+        
+        List<UserLoginDTO> results = 
+            jdbc.query(
+                "CALL sp_login_user(?)",
+                (rs, rowNum) ->
+                    new UserLoginDTO(
+                        rs.getInt("user_id"),
+                        rs.getString("display_name"),
+                        rs.getString("password_hash"),
+                        rs.getString("status")
+                    ),
+            email
+        );
 
-    private static final RowMapper<User> USER_MAPPER = (rs, rowNum) -> {
-        User u = new User();
-        u.setUserId(rs.getString("UserID"));
-        u.setDisplayName(rs.getString("DisplayName"));
-        u.setPassword(rs.getString("Password"));
-        u.setLanguage(rs.getString("Language"));
-        u.setStatus(rs.getString("Status"));
-        u.setRoleId(rs.getString("RoleID"));
-        u.setCreatedAt(rs.getTimestamp("CreatedAt") != null
-                ? rs.getTimestamp("CreatedAt").toLocalDateTime() : null);
-        u.setLastLoggedIn(rs.getTimestamp("LastLoggedIn") != null
-                ? rs.getTimestamp("LastLoggedIn").toLocalDateTime() : null);
-        u.setUpdatedAt(rs.getTimestamp("UpdatedAt") != null
-                ? rs.getTimestamp("UpdatedAt").toLocalDateTime() : null);
-        u.setPfpImageId(rs.getObject("PfpImageID", Integer.class));
-        return u;
-    };
-
-    private static final RowMapper<UserVM> USER_VM_MAPPER = (rs, rowNum) -> {
-        UserVM vm = new UserVM();
-        vm.setUserId(rs.getString("UserID"));
-        vm.setDisplayName(rs.getString("DisplayName"));
-        vm.setLanguage(rs.getString("Language"));
-        vm.setStatus(rs.getString("Status"));
-        vm.setRoleId(rs.getString("RoleID"));
-        vm.setCreatedAt(rs.getTimestamp("CreatedAt") != null
-                ? rs.getTimestamp("CreatedAt").toLocalDateTime() : null);
-        vm.setLastLoggedIn(rs.getTimestamp("LastLoggedIn") != null
-                ? rs.getTimestamp("LastLoggedIn").toLocalDateTime() : null);
-        vm.setUpdatedAt(rs.getTimestamp("UpdatedAt") != null
-                ? rs.getTimestamp("UpdatedAt").toLocalDateTime() : null);
-        // Role permissions
-        vm.setCanAddBuilds(rs.getBoolean("CanAddBuilds"));
-        vm.setCanEditAllBuilds(rs.getBoolean("CanEditAllBuilds"));
-        vm.setCanDeleteAllBuilds(rs.getBoolean("CanDeleteAllBuilds"));
-        vm.setCanViewBuildTypes(rs.getBoolean("CanViewBuildTypes"));
-        vm.setCanAddBuildTypes(rs.getBoolean("CanAddBuildTypes"));
-        vm.setCanEditBuildTypes(rs.getBoolean("CanEditBuildTypes"));
-        vm.setCanDeleteBuildTypes(rs.getBoolean("CanDeleteBuildTypes"));
-        vm.setCanViewWorlds(rs.getBoolean("CanViewWorlds"));
-        vm.setCanAddWorlds(rs.getBoolean("CanAddWorlds"));
-        vm.setCanEditWorlds(rs.getBoolean("CanEditWorlds"));
-        vm.setCanDeleteWorlds(rs.getBoolean("CanDeleteWorlds"));
-        vm.setCanViewAllVotes(rs.getBoolean("CanViewAllVotes"));
-        vm.setCanAddVotes(rs.getBoolean("CanAddVotes"));
-        vm.setCanEditAllVotes(rs.getBoolean("CanEditAllVotes"));
-        vm.setCanDeleteAllVotes(rs.getBoolean("CanDeleteAllVotes"));
-        vm.setCanViewRoles(rs.getBoolean("CanViewRoles"));
-        vm.setCanAddRoles(rs.getBoolean("CanAddRoles"));
-        vm.setCanEditRoles(rs.getBoolean("CanEditRoles"));
-        vm.setCanDeleteRoles(rs.getBoolean("CanDeleteRoles"));
-        vm.setCanViewUsers(rs.getBoolean("CanViewUsers"));
-        vm.setCanAddUsers(rs.getBoolean("CanAddUsers"));
-        vm.setCanEditUsers(rs.getBoolean("CanEditUsers"));
-        vm.setCanBanUsers(rs.getBoolean("CanBanUsers"));
-        vm.setRoleDescription(rs.getString("Description"));
-        // Profile picture (nullable join)
-        vm.setImageId(rs.getObject("ImageID", Integer.class));
-        vm.setFileName(rs.getString("FileName"));
-        vm.setMimeType(rs.getString("MimeType"));
-        vm.setFilePath(rs.getString("FilePath"));
-        return vm;
-    };
-
-    // ── Queries ───────────────────────────────────────────────────────────────
-
-    public List<User> findAll() {
-        return jdbc.query("CALL sp_get_all_users()", new MapSqlParameterSource(), USER_MAPPER);
+        return results.stream()
+            .findFirst()
+            .orElse(null);
     }
 
-    public Optional<User> findById(String userId) {
-        List<User> results = jdbc.query(
-                "CALL sp_get_user(:userId)",
-                new MapSqlParameterSource("userId", userId),
-                USER_MAPPER);
-        return results.stream().findFirst();
+    public UserAccountDTO getUserAccount(
+        Integer actingUserId,
+        Integer userId
+    ) throws DataAccessException {
+
+        return jdbc.queryForObject(
+            "CALL sp_get_user_account(?, ?)",
+            (rs, rowNum) ->
+                new UserAccountDTO(
+                    rs.getInt("user_id"),
+                    rs.getString("email"),
+                    rs.getString("display_name"),
+                    rs.getString("status"),
+                    rs.getTimestamp("last_seen") == null
+                        ? null
+                        : rs.getTimestamp("last_seen")
+                        .toLocalDateTime(),
+                    rs.getTimestamp("created_at")
+                        .toLocalDateTime(),
+                    rs.getTimestamp("last_updated_at") == null
+                        ? null
+                        : rs.getTimestamp("last_updated_at").toLocalDateTime(),
+                    rs.getString("pfp_path")
+                ),
+            actingUserId,
+            userId
+        );
     }
 
-    /** Returns full view model with role permissions and profile picture. */
-    public Optional<UserVM> findViewModelById(String userId) {
-        List<UserVM> results = jdbc.query(
-                "CALL sp_get_userVM(:userId)",
-                new MapSqlParameterSource("userId", userId),
-                USER_VM_MAPPER);
-        return results.stream().findFirst();
+    public UserProfileDTO getUserProfile(
+        Integer actingUserId,
+        Integer userId
+    ) throws DataAccessException {
+
+        return jdbc.queryForObject(
+            "CALL sp_get_user(?, ?)",
+            (rs, rowNum) ->
+                new UserProfileDTO(
+                    rs.getInt("user_id"),
+                    rs.getString("display_name"),
+                    rs.getTimestamp("last_seen") == null
+                        ? null
+                        : rs.getTimestamp("last_seen")
+                        .toLocalDateTime(),
+                    rs.getTimestamp("created_at")
+                        .toLocalDateTime(),
+                    rs.getString("pfp_path")
+                ),
+            actingUserId,
+            userId
+        );
     }
 
-    public void insert(String email, String hashedPassword, String displayName) {
-        MapSqlParameterSource p = new MapSqlParameterSource();
-        p.addValue("email", email);
-        p.addValue("password_hash",     hashedPassword);
-        p.addValue("display_name",  displayName);
-        jdbc.update("CALL sp_insert_user(:email, :password_hash, :display_name)", p);
+    public List<UserDTO> getUsers(
+        Integer actingUserId,
+        PageRequest request
+    ) throws DataAccessException {
+
+        return jdbc.query(
+            "CALL sp_get_users(?, ?, ?, ?, ?)",
+            (rs, rowNum) ->
+                new UserDTO(
+                    rs.getInt("user_id"),
+                    rs.getString("display_name"),
+                    rs.getString("status"),
+                    rs.getTimestamp("last_seen") == null
+                        ? null
+                        : rs.getTimestamp("last_seen")
+                        .toLocalDateTime(),
+                    rs.getTimestamp("created_at")
+                        .toLocalDateTime(),
+                    rs.getString("pfp_path")
+                ),
+            actingUserId,
+            request.search(),
+            request.descending(),
+            request.size(),
+            request.offset()
+        );
     }
 
-    public void update(User user) {
-        MapSqlParameterSource p = new MapSqlParameterSource();
-        p.addValue("user_id",       user.getUserId());
-        p.addValue("display_name",  user.getDisplayName());
-        p.addValue("pfp_image_id",   user.getPfpImageId());
-        p.addValue("status",       user.getStatus());
-        p.addValue("roleId",       user.getRoleId());
-        p.addValue("lastLoggedIn", user.getLastLoggedIn());
-        jdbc.update("CALL sp_update_user(:userId,:displayName,:pfpImageId,:language,:status,:roleId,:lastLoggedIn)", p);
+    public int countUsers() {
+
+        Integer count = jdbc.queryForObject(
+            "CALL sp_count_users()",
+            (rs, rowNum) -> rs.getInt("total")
+        );
+
+        return count == null ? 0 : count;
     }
 
-    public void updatePassword(String userId, String hashedPassword) {
-        MapSqlParameterSource p = new MapSqlParameterSource();
-        p.addValue("userId",   userId);
-        p.addValue("password", hashedPassword);
-        jdbc.update("CALL sp_update_user_password(:userId, :password)", p);
+    public void updateUser(
+        Integer actingUserId,
+        Integer userId,
+        String displayName,
+        Integer pfpImageId
+    ) throws DataAccessException {
+
+        jdbc.update(
+            "CALL sp_update_user(?, ?, ?, ?)",
+            actingUserId,
+            userId,
+            displayName,
+            pfpImageId
+        );
     }
 
-    public void updateRole(String userId, String roleId) {
-        MapSqlParameterSource p = new MapSqlParameterSource();
-        p.addValue("userId", userId);
-        p.addValue("roleId", roleId);
-        jdbc.update("CALL sp_update_user_role(:userId, :roleId)", p);
+    public void deleteUser(
+        Integer actingUserId,
+        Integer userId
+    ) throws DataAccessException {
+
+        jdbc.update(
+            "CALL sp_delete_user(?, ?)",
+            actingUserId,
+            userId
+        );
     }
 
-    public void deleteById(String userId) {
-        jdbc.update("CALL sp_delete_user(:userId)",
-                new MapSqlParameterSource("userId", userId));
+    public void banUser(Integer actingUserId, Integer userId) {
+        
+        jdbc.update(
+            "CALL sp_ban_user(?, ?)",
+            actingUserId,
+            userId
+        );
+    }
+
+    public List<PermissionDTO> getUserPermissions(Integer userId) {
+        
+        return jdbc.query(
+            "CALL sp_get_user_permissions(?)",
+            (rs, rowNum) ->
+                new PermissionDTO(
+                    rs.getInt("permission_id"),
+                    rs.getString("name"),
+                    rs.getString("description")
+                ),
+            userId
+        );
+    }
+
+    public List<RoleDTO> getUserRoles(Integer userId) {
+        
+        return jdbc.query(
+            "CALL sp_get_user_roles(?)",
+            (rs, rowNum) ->
+                new RoleDTO(
+                    rs.getInt("role_id"),
+                    rs.getString("name"),
+                    rs.getString("description")
+                ),
+            userId
+        );
     }
 }

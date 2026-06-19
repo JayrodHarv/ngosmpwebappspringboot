@@ -18,85 +18,18 @@
         </a>
     </div>
 
-    <!-- ── Filters ─────────────────────────────────────────────────────── -->
-    <form method="get" th:action="@{/builds}" class="row g-2 mb-4">
-        <!-- World filter -->
-        <div class="col-12 col-sm-6 col-md-3">
-            <select name="worldId" class="form-select form-select-sm">
-                <option value="">All Worlds</option>
-                <option th:each="w : ${worlds}"
-                        th:value="${w.worldId}"
-                        th:text="${w.worldId}"
-                        th:selected="${w.worldId == worldId}">
-                </option>
-            </select>
-        </div>
-
-        <!-- Build Type filter -->
-        <div class="col-12 col-sm-6 col-md-3">
-            <select name="buildTypeId" class="form-select form-select-sm">
-                <option value="">All Types</option>
-                <option th:each="bt : ${buildTypes}"
-                        th:value="${bt.buildTypeId}"
-                        th:text="${bt.buildTypeId}"
-                        th:selected="${bt.buildTypeId == buildTypeId}">
-                </option>
-            </select>
-        </div>
-
-        <!-- Display Name search -->
-        <div class="col-12 col-sm-6 col-md-4">
-            <input type="text"
-                   name="displayName"
-                   class="form-control form-control-sm"
-                   placeholder="Search by builder…"
-                   th:value="${displayName}"/>
-        </div>
-
-        <!-- Buttons -->
-        <div class="col-auto d-flex gap-2">
-            <button type="submit" class="btn btn-sm btn-secondary">
-                <i class="bi bi-search me-1"></i>Filter
-            </button>
-            <a th:href="@{/builds}" class="btn btn-sm btn-outline-secondary">
-                <i class="bi bi-x-circle me-1"></i>Clear
-            </a>
-        </div>
-    </form>
-
+    <div th:replace="fragments/pagination :: searchAndPagination(${pageResult}, '/builds')"></div>
+    
     <!-- ── Build Grid ───────────────────────────────────────────────────── -->
-    <div th:if="${builds.isEmpty()}" class="text-center text-muted py-5">
+    <div th:if="${pageResult.items.isEmpty()}" class="text-center text-muted py-5">
         <i class="bi bi-inbox" style="font-size:3rem;"></i>
         <p class="mt-2">No builds found. Try adjusting your filters.</p>
     </div>
 
-    <div th:unless="${builds.isEmpty()}" class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-4 g-4">
-        <div th:each="b : ${builds}" class="col">
+    <div th:unless="${pageResult.items.isEmpty()}" class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-4 g-4">
+        <div th:each="b : ${pageResult.items}" class="col">
             <th:block th:replace="~{fragments/buildCard :: buildCard(build=${b})}"/>
         </div>
     </div>
-
-    <!-- ── Pagination ───────────────────────────────────────────────────── -->
-    <nav th:if="${!builds.isEmpty()}" class="mt-5 d-flex justify-content-center" aria-label="Builds pagination">
-        <ul class="pagination">
-            <li class="page-item" th:classappend="${page == 0} ? 'disabled'">
-                <a class="page-link"
-                   th:href="@{/builds(page=${page - 1}, worldId=${worldId}, buildTypeId=${buildTypeId}, displayName=${displayName})}">
-                    <i class="bi bi-chevron-left"></i>
-                </a>
-            </li>
-            <li class="page-item disabled">
-                <span class="page-link">Page <span th:text="${page + 1}">1</span></span>
-            </li>
-            <li class="page-item" th:classappend="${builds.size() < 12} ? 'disabled'">
-                <a class="page-link"
-                   th:href="@{/builds(page=${page + 1}, worldId=${worldId}, buildTypeId=${buildTypeId}, displayName=${displayName})}">
-                    <i class="bi bi-chevron-right"></i>
-                </a>
-            </li>
-        </ul>
-    </nav>
-
 </main>
-
 </html>

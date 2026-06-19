@@ -1,8 +1,17 @@
 package com.jayrodharv.ngosmpwebappspringboot.service;
 
+import com.jayrodharv.ngosmpwebappspringboot.config.CustomUserDetails;
 import com.jayrodharv.ngosmpwebappspringboot.dao.UserDAO;
-import com.jayrodharv.ngosmpwebappspringboot.model.User;
-import com.jayrodharv.ngosmpwebappspringboot.model.UserVM;
+import com.jayrodharv.ngosmpwebappspringboot.dto.RoleDTO;
+import com.jayrodharv.ngosmpwebappspringboot.dto.user.UserAccountDTO;
+import com.jayrodharv.ngosmpwebappspringboot.dto.user.UserDTO;
+import com.jayrodharv.ngosmpwebappspringboot.dto.user.UserLoginDTO;
+import com.jayrodharv.ngosmpwebappspringboot.dto.user.UserProfileDTO;
+import com.jayrodharv.ngosmpwebappspringboot.model.Permission;
+import com.jayrodharv.ngosmpwebappspringboot.pagination.PageRequest;
+import com.jayrodharv.ngosmpwebappspringboot.pagination.PageResult;
+
+import lombok.AllArgsConstructor;
 
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -10,87 +19,154 @@ import org.springframework.security.core.userdetails.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
-/**
- * Handles user lifecycle operations and implements UserDetailsService
- * so Spring Security can authenticate against the smpdb User table.
- */
 @Service
+@AllArgsConstructor
 public class UserService implements UserDetailsService {
 
-    private final UserDAO       userDao;
-    private final PasswordEncoder encoder;
+    private final UserDAO           userDao;
+    private final PasswordEncoder   passwordEncoder;
+    private final AuthorizationService auth;
 
-    public UserService(UserDAO userDao, PasswordEncoder encoder) {
-        this.userDao = userDao;
-        this.encoder = encoder;
-    }
+    // ─────────────────────────────────────────────
+    // SPRING SECURITY
+    // ─────────────────────────────────────────────
 
-    // ── Spring Security ───────────────────────────────────────────────────────
-
-    /**
-     * Called by Spring Security on every login attempt.
-     * Loads the user by email (UserID), wraps their RoleID as a granted authority.
-     */
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        User user = userDao.findById(email)
-                .orElseThrow(() -> new UsernameNotFoundException("No user: " + email));
 
-        if (user.isLocked()) {
+        UserLoginDTO user = userDao.loginUser(email);
+
+        if (user == null) {
+            throw new UsernameNotFoundException("No user found: " + email);
+        }
+
+        if ("locked".equalsIgnoreCase(user.status())) {
             throw new LockedException("Account is locked: " + email);
         }
 
-        return org.springframework.security.core.userdetails.User
-                .withUsername(user.getUserId())
-                .password(user.getPassword())
-                .authorities(new SimpleGrantedAuthority("ROLE_" + user.getRoleId()))
-                .accountLocked(user.isLocked())
-                .disabled(user.isInactive())
-                .build();
+        Integer userId = user.userId();
+
+        // ── LOAD PERMISSIONS (SPRING SECURITY AUTHORITY SOURCE)
+        Set<Permission> permissions = userDao.getUserPermissions(userId)
+            .stream()
+            .map(dto -> Permission.valueOf(dto.name()))
+            .collect(Collectors.toSet());
+
+        List<SimpleGrantedAuthority> authorities = 
+            permissions.stream()
+                .map(p -> new SimpleGrantedAuthority(p.name()))
+                .toList();
+
+        Set<RoleDTO> roles = userDao.getUserRoles(userId)
+            .stream()
+            .collect(Collectors.toSet());
+
+        return new CustomUserDetails(
+            email,
+            user.passwordHash(),
+            authorities,
+            userId,
+            permissions,
+            roles
+        );
     }
 
-    // ── CRUD ──────────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────
+    // CRUD (DAO-backed)
+    // ─────────────────────────────────────────────
 
-    public List<User> findAll() { return userDao.findAll(); }
-
-    public Optional<User> findById(String userId) { return userDao.findById(userId); }
-
-    public Optional<UserVM> findViewModel(String userId) {
-        return userDao.findViewModelById(userId);
+    public Integer register(String email, String displayName, String rawPassword) {
+        return userDao.registerUser(
+            email,
+            displayName,
+            passwordEncoder.encode(rawPassword)
+        );
     }
 
-    public void register(String email, String displayName, String rawPassword) {
-        userDao.insert(email, encoder.encode(rawPassword), displayName);
+    public UserProfileDTO getUserProfile(CustomUserDetails actingUser, Integer userId) {
+
+        UserProfileDTO userProfile = userDao.getUserProfile(actingUser.getUserId(), userId);
+
+        boolean isOwner = actingUser.getUserId() == userProfile.userId();
+        
+        auth.requireOwnOrAll(
+            actingUser,
+            Permission.USER_VIEW_PROFILE_OWN,
+            Permission.USER_VIEW_PROFILE_ALL,
+            isOwner
+        );
+
+        return userProfile;
     }
 
-    public void update(User user) { userDao.update(user); }
+    public UserAccountDTO getUserAccount(CustomUserDetails actingUser, Integer userId) {
 
-    public void changePassword(String userId, String rawPassword) {
-        userDao.updatePassword(userId, encoder.encode(rawPassword));
+        UserAccountDTO userAccount = userDao.getUserAccount(actingUser.getUserId(), userId);
+
+        boolean isOwner = actingUser.getUserId() == userAccount.userId();
+        
+        auth.requireOwnOrAll(
+            actingUser,
+            Permission.USER_VIEW_ACCOUNT_OWN,
+            Permission.USER_VIEW_ACCOUNT_ALL,
+            isOwner
+        );
+
+        return userAccount;
     }
 
-    public void assignRole(String userId, String roleId) {
-        userDao.updateRole(userId, roleId);
+    public PageResult<UserDTO> getUsers(CustomUserDetails actingUser, PageRequest request) {
+
+        auth.requirePermission(actingUser, Permission.USER_LIST_VIEW);
+
+        List<UserDTO> users = userDao.getUsers(
+            actingUser.getUserId(),
+            request
+        );
+
+        int totalItems = userDao.countUsers();
+
+        return PageResult.of(
+            users,
+            request,
+            totalItems
+        );
     }
 
-    public void ban(String userId) {
-        userDao.findById(userId).ifPresent(u -> {
-            u.setStatus("locked");
-            userDao.update(u);
-        });
+    public void updateUser(
+        CustomUserDetails actingUser,
+        Integer userId,
+        String displayName,
+        Integer pfpImageId) {
+
+        userDao.updateUser(actingUser.getUserId(), userId, displayName, pfpImageId);
     }
 
-    public void delete(String userId) { userDao.deleteById(userId); }
+    public void deleteUser(CustomUserDetails actingUser, Integer userId) {
+        userDao.deleteUser(actingUser.getUserId(), userId);
+    }
 
-    /** Stamp the last-logged-in time after successful auth. */
-    public void recordLogin(String userId) {
-        userDao.findById(userId).ifPresent(u -> {
-            u.setLastLoggedIn(LocalDateTime.now());
-            userDao.update(u);
-        });
+    // ─────────────────────────────────────────────
+    // BUSINESS ACTIONS
+    // ─────────────────────────────────────────────
+
+    public void changePassword(CustomUserDetails actingUser, String email, String rawPassword) {
+        // you don’t currently have a DAO method for this
+        // either add stored procedure OR extend DAO
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+
+    public void banUser(CustomUserDetails actingUser, Integer userId) {
+        
+        auth.requirePermission(
+            actingUser,
+            Permission.USER_LOCK
+        );
+
+        userDao.banUser(actingUser.getUserId(), userId);
     }
 }

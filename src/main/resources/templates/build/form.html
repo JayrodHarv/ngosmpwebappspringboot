@@ -5,11 +5,7 @@
       layout:decorate="~{layouts/main}">
 
 <head>
-    <!--
-      Used for both POST /builds/new  (build == null)
-      and     POST /builds/{id}/edit  (build != null)
-    -->
-    <title th:text="${build != null} ? 'Edit ' + ${build.buildId} : 'New Build'">Build Form</title>
+    <title th:text="${editing} ? 'Edit ' + ${form.buildId} : 'New Build'">Build Form</title>
 </head>
 
 <main layout:fragment="content">
@@ -18,117 +14,80 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="mb-0">
             <i class="bi bi-hammer me-2"></i>
-            <span th:text="${build != null} ? 'Edit Build' : 'New Build'">Build Form</span>
+            <span th:text="${editing} ? 'Edit Build' : 'New Build'">Build Form</span>
         </h2>
-        <a th:href="${build != null} ? @{/builds/{id}(id=${build.buildId})} : @{/builds}"
+        <a th:href="${editing} ? @{/builds/{id}(id=${form.buildId})} : @{/builds}"
            class="btn btn-sm btn-outline-secondary">
             <i class="bi bi-arrow-left me-1"></i>Cancel
         </a>
     </div>
 
-    <!-- ── Form ────────────────────────────────────────────────────────── -->
-    <!--
-      Action switches between /builds/new and /builds/{id}/edit based on
-      whether 'build' is present in the model.
-    -->
-    <form th:action="${build != null}
-                      ? @{/builds/{id}/edit(id=${build.buildId})}
+    <form th:object="${form}"
+          th:action="${editing}
+                      ? @{/builds/{id}/edit(id=${form.buildId})}
                       : @{/builds/new}"
           method="post"
           enctype="multipart/form-data"
           class="row g-3"
           style="max-width:700px;">
 
-        <!-- Build ID — editable only on create -->
-        <div class="col-12 col-sm-6" th:if="${build == null}">
-            <label for="buildId" class="form-label">Build ID <span class="text-danger">*</span></label>
+        <!-- Build Name -->
+        <div class="col-12 col-sm-6">
+            <label class="form-label">
+                Build Name
+                <span class="text-danger">*</span>
+            </label>
+
             <input type="text"
-                   id="buildId"
-                   name="buildId"
+                   th:field="*{name}"
                    class="form-control"
                    required
                    placeholder="e.g. SpawnTower"/>
         </div>
-        <div class="col-12 col-sm-6" th:if="${build != null}">
-            <label class="form-label">Build ID</label>
-            <input type="text" class="form-control" readonly
-                   th:value="${build.buildId}"/>
-        </div>
-
-        <!-- World -->
-        <div class="col-12 col-sm-6">
-            <label for="worldId" class="form-label">
-                World <span class="text-danger">*</span>
-            </label>
-            <select id="worldId" name="worldId" class="form-select">
-                <option value="">— None —</option>
-                <option th:each="w : ${worlds}"
-                        th:value="${w.worldId}"
-                        th:text="${w.worldId}"
-                        required
-                        th:selected="${build != null and build.worldId == w.worldId}">
-                </option>
-            </select>
-        </div>
-
-        <!-- Build Type -->
-        <div class="col-12 col-sm-6">
-            <label for="buildTypeId" class="form-label">
-                Build Type <span class="text-danger">*</span>
-            </label>
-            <select id="buildTypeId" name="buildTypeId" class="form-select">
-                <option value="">— Uncategorized —</option>
-                <option th:each="bt : ${buildTypes}"
-                        th:value="${bt.buildTypeId}"
-                        th:text="${bt.buildTypeId}"
-                        required
-                        th:selected="${build != null and build.buildTypeId == bt.buildTypeId}">
-                </option>
-            </select>
-        </div>
 
         <!-- Date Built -->
         <div class="col-12 col-sm-6">
-            <label for="dateBuilt" class="form-label">Date Built</label>
+            <label class="form-label">
+                Date Built
+            </label>
+
             <input type="date"
-                   id="dateBuilt"
-                   name="dateBuilt"
-                   class="form-control"
-                   th:value="${build?.dateBuilt}"/>
+                   th:field="*{dateBuilt}"
+                   class="form-control"/>
         </div>
 
         <!-- Coordinates -->
         <div class="col-12">
-            <label class="form-label">Coordinates</label>
+            <label class="form-label">
+                Coordinates
+            </label>
+
             <div class="row g-2">
                 <div class="col-4">
                     <div class="input-group">
                         <span class="input-group-text">X</span>
                         <input type="number"
-                               name="xCoord"
+                               th:field="*{xCoord}"
                                class="form-control"
-                               placeholder="0"
-                               th:value="${build?.xCoord}"/>
+                               placeholder="0"/>
                     </div>
                 </div>
                 <div class="col-4">
                     <div class="input-group">
                         <span class="input-group-text">Y</span>
                         <input type="number"
-                               name="yCoord"
+                               th:field="*{yCoord}"
                                class="form-control"
-                               placeholder="64"
-                               th:value="${build?.yCoord}"/>
+                               placeholder="64"/>
                     </div>
                 </div>
                 <div class="col-4">
                     <div class="input-group">
                         <span class="input-group-text">Z</span>
                         <input type="number"
-                               name="zCoord"
+                               th:field="*{zCoord}"
                                class="form-control"
-                               placeholder="0"
-                               th:value="${build?.zCoord}"/>
+                               placeholder="0"/>
                     </div>
                 </div>
             </div>
@@ -137,28 +96,39 @@
         <!-- Description -->
         <div class="col-12">
             <label for="description" class="form-label">
-                Description <span class="text-danger">*</span>
+                Description 
+                <span class="text-danger">*</span>
             </label>
-            <textarea id="description"
-                      name="description"
+            <textarea th:field="*{description}"
                       class="form-control"
                       rows="4"
                       required
-                      placeholder="Describe the build…"
-                      th:text="${build?.buildDescription}">
+                      placeholder="Describe the build…">
             </textarea>
         </div>
 
-        <!-- Primary Image — only on create -->
-        <div class="col-12" th:if="${build == null}">
-            <label for="image" class="form-label">Primary Image</label>
-            <input type="file"
-                   id="image"
-                   name="image"
-                   accept="image/*"
-                   class="form-control"/>
-            <div class="form-text">Optional. You can add more images after creation.</div>
+        <!-- Tags --> 
+        <div class="col-12"> 
+            <label class="form-label"> Tags </label> 
+            <div class="card"> 
+                <div class="card-body"> 
+                    <div class="row"> 
+                        <div class="col-lg-3 col-md-4 col-sm-6 mb-2" th:each="tag : ${tags}"> 
+                            <div class="form-check"> 
+                                <input class="form-check-input" type="checkbox" th:field="*{tagIds}" th:value="${tag.tagId}"> 
+                                <label class="form-check-label" th:text="${tag.tagName}"> </label>
+                            </div> 
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
+
+        <div th:replace="~{fragments/image-picker :: imagePicker(
+            ${null},
+            'newImages',
+            'build-images'
+        )}"></div>
 
         <!-- Submit -->
         <div class="col-12 d-flex gap-2">

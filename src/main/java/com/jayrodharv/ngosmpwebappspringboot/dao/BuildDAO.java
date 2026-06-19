@@ -1,165 +1,99 @@
 package com.jayrodharv.ngosmpwebappspringboot.dao;
 
-import org.springframework.jdbc.core.RowMapper;
+import com.jayrodharv.ngosmpwebappspringboot.dto.build.BuildFormDTO;
+import com.jayrodharv.ngosmpwebappspringboot.dto.build.BuildListDTO;
+import com.jayrodharv.ngosmpwebappspringboot.pagination.PageRequest;
+import com.jayrodharv.ngosmpwebappspringboot.pagination.PageResult;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import lombok.AllArgsConstructor;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.core.simple.SimpleJdbcCall;
 import org.springframework.stereotype.Repository;
 
-import com.jayrodharv.ngosmpwebappspringboot.model.Build;
-import com.jayrodharv.ngosmpwebappspringboot.model.BuildVM;
-import com.jayrodharv.ngosmpwebappspringboot.model.Image;
-
-import java.util.List;
-import java.util.Optional;
-
 @Repository
+@AllArgsConstructor
 public class BuildDAO {
 
-    private final NamedParameterJdbcTemplate jdbc;
+    private final JdbcTemplate jdbc;
 
-    public BuildDAO(NamedParameterJdbcTemplate jdbc) {
-        this.jdbc = jdbc;
+    public PageResult<BuildListDTO> getBuilds(PageRequest request) {
+        AtomicInteger resultCount = new AtomicInteger();
+
+        List<BuildListDTO> builds = jdbc.query(
+            "CALL sp_get_builds(?, ?, ?, ?)",
+            (rs, rowNum) -> {
+                if (rowNum == 0) {
+                    resultCount.set(rs.getInt("total_count"));
+                }
+
+                return new BuildListDTO(
+                    rs.getInt("build_id"),
+                    rs.getString("name"),
+                    rs.getString("description"),
+                    rs.getDate("date_built") == null
+                        ? null
+                        : rs.getDate("date_built").toLocalDate(),
+                    rs.getObject("x_coord", Integer.class),
+                    rs.getObject("y_coord", Integer.class),
+                    rs.getObject("z_coord", Integer.class),
+                    rs.getTimestamp("created_at").toLocalDateTime(),
+                    rs.getInt("primary_image_id"),
+                    rs.getString("primary_image_path"),
+
+                    rs.getInt("created_by"),
+                    rs.getString("creator_display_name"),
+
+                    List.of()
+                );
+            },
+
+            request.search(),
+            request.descending(),
+            request.size(),
+            request.offset()
+        );
+
+        return PageResult.of(builds, request, resultCount.get());
     }
 
-    // ── Row Mappers ───────────────────────────────────────────────────────────
+    // getBuild
 
-    private static final RowMapper<BuildVM> BUILD_VM_MAPPER = (rs, rowNum) -> {
-        BuildVM b = new BuildVM();
-        b.setBuildId(rs.getString("BuildID"));
-        b.setUserId(rs.getString("UserID"));
-        b.setDateBuilt(rs.getDate("DateBuilt") != null
-                ? rs.getDate("DateBuilt").toLocalDate() : null);
-        b.setXCoord(rs.getObject("XCoord", Integer.class));
-        b.setYCoord(rs.getObject("YCoord", Integer.class));
-        b.setZCoord(rs.getObject("ZCoord", Integer.class));
-        b.setCreatedAt(rs.getTimestamp("CreatedAt") != null
-                ? rs.getTimestamp("CreatedAt").toLocalDateTime() : null);
-        b.setBuildDescription(rs.getString("build_desc"));
-        // World
-        b.setWorldId(rs.getString("WorldID"));
-        b.setWorldDateStarted(rs.getDate("DateStarted") != null
-                ? rs.getDate("DateStarted").toLocalDate() : null);
-        b.setWorldDescription(rs.getString("world_desc"));
-        // BuildType
-        b.setBuildTypeId(rs.getString("BuildTypeID"));
-        b.setBuildTypeDescription(rs.getString("buildtype_desc"));
-        // User
-        b.setUserDisplayName(rs.getString("UserDisplayName"));
-        // Primary image
-        b.setImageId(rs.getObject("ImageID", Integer.class));
-        b.setFileName(rs.getString("FileName"));
-        b.setMimeType(rs.getString("MimeType"));
-        b.setFilePath(rs.getString("FilePath"));
-        return b;
-    };
+    public Integer createBuild(Integer actingUserId, BuildFormDTO dto) {
+        SimpleJdbcCall call = new SimpleJdbcCall(jdbc).withProcedureName(
+            "sp_insert_build"
+        );
 
-    private static final RowMapper<Image> IMAGE_MAPPER = (rs, rowNum) -> {
-        Image img = new Image();
-        img.setImageId(rs.getObject("ImageID", Integer.class));
-        img.setFileName(rs.getString("FileName"));
-        img.setMimeType(rs.getString("MimeType"));
-        img.setFilePath(rs.getString("FilePath"));
-        img.setFileSize(rs.getLong("FileSize"));
-        return img;
-    };
+        Map<String, Object> result = call.execute(
+            new MapSqlParameterSource()
+                .addValue("p_acting_user_id", actingUserId)
+                .addValue("p_name", dto.name())
+                .addValue("p_description", dto.description())
+                .addValue("p_date_built", dto.dateBuilt())
+                .addValue("p_x_coord", dto.xCoord())
+                .addValue("p_y_coord", dto.yCoord())
+                .addValue("p_z_coord", dto.zCoord())
+        );
 
-    // ── Queries ───────────────────────────────────────────────────────────────
-
-    /**
-     * Paginated/filtered build list.
-     * Pass null for any filter to skip it (the SP handles NULLs as wildcards).
-     */
-    public List<BuildVM> findAll(int limit, int offset,
-                                        String worldId, String buildTypeId,
-                                        String userDisplayName) {
-        MapSqlParameterSource p = new MapSqlParameterSource();
-        p.addValue("limit",           limit);
-        p.addValue("offset",          offset);
-        p.addValue("worldId",         worldId);
-        p.addValue("buildTypeId",     buildTypeId);
-        p.addValue("userDisplayName", userDisplayName);
-        return jdbc.query(
-                "CALL sp_get_builds(:limit,:offset,:worldId,:buildTypeId,:userDisplayName)",
-                p, BUILD_VM_MAPPER);
+        return ((Number) result.get("p_build_id")).intValue();
     }
 
-    public Optional<BuildVM> findById(String buildId) {
-        List<BuildVM> results = jdbc.query(
-                "CALL sp_get_build(:buildId)",
-                new MapSqlParameterSource("buildId", buildId),
-                BUILD_VM_MAPPER);
-        return results.stream().findFirst();
-    }
+    public void addBuildTag(
+        Integer actingUserId,
+        Integer buildId,
+        Integer tagId
+    ) {
+        SimpleJdbcCall call = new SimpleJdbcCall(jdbc).withProcedureName(
+            "sp_add_build_tag"
+        );
 
-    public List<BuildVM> findByUser(String userId) {
-        return jdbc.query(
-                "CALL sp_get_builds_by_user(:userId)",
-                new MapSqlParameterSource("userId", userId),
-                BUILD_VM_MAPPER);
-    }
-
-    public void insert(Build build) {
-        jdbc.update(
-                "CALL sp_insert_build(:buildId,:userId,:worldId,:buildTypeId,:dateBuilt,:x,:y,:z,:description)",
-                buildParams(build));
-    }
-
-    public void update(Build build) {
-        MapSqlParameterSource p = new MapSqlParameterSource();
-        p.addValue("buildId",     build.getBuildId());
-        p.addValue("worldId",     build.getWorldId());
-        p.addValue("buildTypeId", build.getBuildTypeId());
-        p.addValue("dateBuilt",   build.getDateBuilt());
-        p.addValue("x",           build.getXCoord());
-        p.addValue("y",           build.getYCoord());
-        p.addValue("z",           build.getZCoord());
-        p.addValue("description", build.getDescription());
-        jdbc.update("CALL sp_update_build(:buildId,:worldId,:buildTypeId,:dateBuilt,:x,:y,:z,:description)", p);
-    }
-
-    public void deleteById(String buildId) {
-        jdbc.update("CALL sp_delete_build(:buildId)",
-                new MapSqlParameterSource("buildId", buildId));
-    }
-
-    // ── Build Images ──────────────────────────────────────────────────────────
-
-    public List<Image> findImages(String buildId) {
-        return jdbc.query(
-                "CALL sp_get_build_images(:buildId)",
-                new MapSqlParameterSource("buildId", buildId),
-                IMAGE_MAPPER);
-    }
-
-    public void addImage(String buildId, int imageId, boolean isPrimary, int sortOrder) {
-        MapSqlParameterSource p = new MapSqlParameterSource();
-        p.addValue("buildId",   buildId);
-        p.addValue("imageId",   imageId);
-        p.addValue("isPrimary", isPrimary);
-        p.addValue("sortOrder", sortOrder);
-        jdbc.update("CALL sp_insert_build_image(:buildId,:imageId,:isPrimary,:sortOrder)", p);
-    }
-
-    public void removeImage(String buildId, int imageId) {
-        MapSqlParameterSource p = new MapSqlParameterSource();
-        p.addValue("buildId", buildId);
-        p.addValue("imageId", imageId);
-        jdbc.update("CALL sp_delete_build_image(:buildId,:imageId)", p);
-    }
-
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
-    private MapSqlParameterSource buildParams(Build b) {
-        MapSqlParameterSource p = new MapSqlParameterSource();
-        p.addValue("buildId",     b.getBuildId());
-        p.addValue("userId",      b.getUserId());
-        p.addValue("worldId",     b.getWorldId());
-        p.addValue("buildTypeId", b.getBuildTypeId());
-        p.addValue("dateBuilt",   b.getDateBuilt());
-        p.addValue("x",           b.getXCoord());
-        p.addValue("y",           b.getYCoord());
-        p.addValue("z",           b.getZCoord());
-        p.addValue("description", b.getDescription());
-        return p;
+        call.execute(
+            new MapSqlParameterSource()
+                .addValue("p_acting_user_id", actingUserId)
+                .addValue("p_build_id", buildId)
+                .addValue("p_tag_id", tagId)
+        );
     }
 }

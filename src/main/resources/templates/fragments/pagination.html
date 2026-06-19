@@ -1,45 +1,169 @@
-<!-- 
-    Simple Pagination Fragment with Previous/Next buttons and page info
-    Uses 1-indexed pages (page 1 = first page)
-    
-    Parameters:
-    - baseUrl: The base URL for pagination links (e.g., "/votes", "/builds")
-    - currentPage: Current page number (1-indexed)
-    - totalPages: Total number of pages
-    - additionalParams: Additional query parameters to preserve (optional)
--->
-<div th:fragment="pagination(baseUrl, currentPage, totalPages, additionalParams)"
-     th:remove="tag">
-    
-    <nav th:if="${totalPages > 1}" class="mt-4 d-flex justify-content-center" aria-label="Pagination">
-        <ul class="pagination">
-            <!-- Previous Button -->
-            <li class="page-item" th:classappend="${currentPage == 1} ? 'disabled' : ''">
-                <a class="page-link" 
-                   th:href="@{${baseUrl}(page=${currentPage - 1}, ${additionalParams})}"
-                   aria-label="Previous">
-                    <i class="bi bi-chevron-left"></i>
-                    <span class="visually-hidden">Previous</span>
-                </a>
-            </li>
-            
-            <!-- Current Page Info -->
-            <li class="page-item disabled">
-                <span class="page-link">
-                    Page <span th:text="${currentPage}">1</span> of <span th:text="${totalPages}">1</span>
+<div th:fragment="searchAndPagination(pageResult, actionUrl)">
+
+    <!-- Search -->
+    <form method="get"
+          th:action="${actionUrl}"
+          class="mb-3">
+
+        <div class="input-group">
+
+            <input type="text"
+                   class="form-control"
+                   name="search"
+                   placeholder="Search..."
+                   th:value="${param.search}" />
+
+            <button type="submit"
+                    class="btn btn-primary">
+                Search
+            </button>
+
+        </div>
+
+    </form>
+
+    <!-- Summary -->
+    <div class="row align-items-center mb-3">
+
+        <div class="col">
+
+            <small class="text-muted">
+
+                Showing page
+
+                <strong th:text="${pageResult.page}">
+                    1
+                </strong>
+
+                of
+
+                <strong th:text="${pageResult.totalPages}">
+                    1
+                </strong>
+
+                (
+                <span th:text="${pageResult.totalItems}">
+                    0
                 </span>
-            </li>
-            
-            <!-- Next Button -->
-            <li class="page-item" th:classappend="${currentPage == totalPages} ? 'disabled' : ''">
-                <a class="page-link" 
-                   th:href="@{${baseUrl}(page=${currentPage + 1}, ${additionalParams})}"
-                   aria-label="Next">
-                    <i class="bi bi-chevron-right"></i>
-                    <span class="visually-hidden">Next</span>
+                total results)
+
+            </small>
+
+        </div>
+
+    </div>
+
+    <!-- Pagination -->
+    <nav th:if="${pageResult.totalPages > 1}">
+
+        <ul class="pagination justify-content-center">
+
+            <!-- Previous -->
+
+            <li class="page-item"
+                th:classappend="${pageResult.page == 1} ? ' disabled'">
+
+                <a class="page-link"
+                   th:href="@{${actionUrl}(
+                        page=${pageResult.page - 1},
+                        size=${pageResult.size},
+                        search=${param.search}
+                   )}">
+                    Previous
                 </a>
+
             </li>
+
+            <!-- First Page -->
+
+            <li class="page-item"
+                th:if="${pageResult.page > 3}">
+
+                <a class="page-link"
+                   th:href="@{${actionUrl}(
+                        page=1,
+                        size=${pageResult.size},
+                        search=${param.search}
+                   )}">
+                    1
+                </a>
+
+            </li>
+
+            <li class="page-item disabled"
+                th:if="${pageResult.page > 4}">
+                <span class="page-link">...</span>
+            </li>
+
+            <!-- Nearby Pages -->
+
+            <li class="page-item"
+                th:each="pageNum :
+                    ${#numbers.sequence(
+                        T(java.lang.Math).max(1, pageResult.page - 2),
+                        T(java.lang.Math).min(
+                            pageResult.totalPages,
+                            pageResult.page + 2
+                        )
+                    )}"
+                th:classappend="${pageNum == pageResult.page} ? ' active'">
+
+                <a class="page-link"
+                   th:if="${pageNum != pageResult.page}"
+                   th:text="${pageNum}"
+                   th:href="@{${actionUrl}(
+                        page=${pageNum},
+                        size=${pageResult.size},
+                        search=${param.search}
+                   )}">
+                </a>
+
+                <span class="page-link"
+                      th:if="${pageNum == pageResult.page}"
+                      th:text="${pageNum}">
+                </span>
+
+            </li>
+
+            <!-- Last Page -->
+
+            <li class="page-item disabled"
+                th:if="${pageResult.page < pageResult.totalPages - 3}">
+                <span class="page-link">...</span>
+            </li>
+
+            <li class="page-item"
+                th:if="${pageResult.page < pageResult.totalPages - 2}">
+
+                <a class="page-link"
+                   th:text="${pageResult.totalPages}"
+                   th:href="@{${actionUrl}(
+                        page=${pageResult.totalPages},
+                        size=${pageResult.size},
+                        search=${param.search}
+                   )}">
+                </a>
+
+            </li>
+
+            <!-- Next -->
+
+            <li class="page-item"
+                th:classappend="${pageResult.page == pageResult.totalPages} ? ' disabled'">
+
+                <a class="page-link"
+                   th:href="@{${actionUrl}(
+                        page=${pageResult.page + 1},
+                        size=${pageResult.size},
+                        search=${param.search}
+                   )}">
+                    Next
+                </a>
+
+            </li>
+
         </ul>
+
     </nav>
-    
+
 </div>

@@ -42,16 +42,23 @@ public class ImageDAO {
      * Calls sp_insert_image which de-duplicates by file hash.
      * Returns the ImageID (new or existing).
      */
-    public int insertOrGet(String fileName, String mimeType, long fileSize,
-                           String filePath, String fileHash) {
+    public Integer insertOrGet(
+        Integer actingUserId,
+        String fileName,
+        String mimeType,
+        long fileSize,
+        String filePath,
+        String fileHash
+    ) {
         MapSqlParameterSource p = new MapSqlParameterSource();
-        p.addValue("fileName", fileName);
-        p.addValue("mimeType", mimeType);
-        p.addValue("fileSize", fileSize);
-        p.addValue("filePath", filePath);
-        p.addValue("fileHash", fileHash);
+            p.addValue("actingUserId", actingUserId);
+            p.addValue("fileName", fileName);
+            p.addValue("mimeType", mimeType);
+            p.addValue("fileSize", fileSize);
+            p.addValue("filePath", filePath);
+            p.addValue("fileHash", fileHash);
         List<Integer> ids = jdbc.query(
-                "CALL sp_insert_image(:fileName,:mimeType,:fileSize,:filePath,:fileHash)",
+                "CALL sp_insert_image(:actingUserId,:fileName,:mimeType,:fileSize,:filePath,:fileHash)",
                 p, (rs, rowNum) -> rs.getInt("ImageID"));
         return ids.isEmpty() ? -1 : ids.get(0);
     }

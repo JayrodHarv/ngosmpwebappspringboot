@@ -1,0 +1,74 @@
+package com.jayrodharv.ngosmpwebappspringboot.model;
+
+public enum Permission {
+    // Images
+    IMAGE_VIEW,
+    IMAGE_CREATE,
+    IMAGE_EDIT_OWN,
+    IMAGE_EDIT_ALL,
+    IMAGE_DELETE_OWN,
+    IMAGE_DELETE_ALL,
+
+    // Users
+    USER_LIST_VIEW,
+    USER_VIEW_PROFILE_OWN,
+    USER_VIEW_PROFILE_ALL,
+    USER_VIEW_ACCOUNT_OWN,
+    USER_VIEW_ACCOUNT_ALL,
+    USER_LOCK,
+    USER_CHANGE_PASSWORD_OWN,
+    USER_CHANGE_PASSWORD_ALL,
+    USER_EDIT_OWN,
+    USER_EDIT_ALL,
+    USER_DELETE_OWN,
+    USER_DELETE_ALL,
+
+    // Roles
+    ROLE_VIEW,
+    ROLE_ASSIGN,
+    ROLE_CREATE,
+    ROLE_EDIT,
+    ROLE_DELETE,
+
+    // Permissions
+    PERMISSION_VIEW,
+    PERMISSION_ASSIGN,
+
+    // Builds
+    BUILD_VIEW,
+    BUILD_CREATE,
+    BUILD_EDIT_OWN,
+    BUILD_EDIT_ALL,
+    BUILD_DELETE_OWN,
+    BUILD_DELETE_ALL,
+
+    // Tags
+    TAG_VIEW,
+    TAG_CREATE,
+    TAG_EDIT_OWN,
+    TAG_EDIT_ALL,
+    TAG_DELETE_OWN,
+    TAG_DELETE_ALL,
+
+    // Votes
+    VOTE_VIEW,
+    VOTE_CREATE,
+    VOTE_EDIT_OWN,
+    VOTE_EDIT_ALL,
+    VOTE_DELETE_OWN,
+    VOTE_DELETE_ALL,
+    VOTE_CAST,
+
+    // Posts
+    POST_VIEW,
+    POST_CREATE,
+    POST_EDIT_OWN,
+    POST_EDIT_ALL,
+    POST_DELETE_OWN,
+    POST_DELETE_ALL,
+    POST_PUBLISH_NEWS,
+    POST_PUBLISH_ANNOUNCEMENT,
+
+    // Audit logs
+    AUDIT_VIEW
+}
