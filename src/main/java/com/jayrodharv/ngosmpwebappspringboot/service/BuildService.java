@@ -11,8 +11,6 @@ import com.jayrodharv.ngosmpwebappspringboot.dto.tag.TagDTO;
 import com.jayrodharv.ngosmpwebappspringboot.pagination.PageRequest;
 import com.jayrodharv.ngosmpwebappspringboot.pagination.PageResult;
 
-import jakarta.transaction.Transactional;
-
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
@@ -34,19 +32,18 @@ public class BuildService {
         PageResult<BuildListDTO> builds = buildDAO.getBuilds(request);
 
         List<Integer> buildIds = builds
-            .items()
-            .stream()
-            .map(BuildListDTO::buildId)
-            .toList();
+                .items()
+                .stream()
+                .map(BuildListDTO::buildId)
+                .toList();
 
         Map<Integer, List<TagDTO>> tagsByBuild = tagDAO.getTagsForBuilds(
-            buildIds
-        );
+                buildIds);
 
         for (BuildListDTO build : builds.items()) {
             build
-                .tags()
-                .addAll(tagsByBuild.getOrDefault(tagsByBuild, List.of()));
+                    .tags()
+                    .addAll(tagsByBuild.getOrDefault(tagsByBuild, List.of()));
         }
 
         return builds;
@@ -67,14 +64,12 @@ public class BuildService {
         }
 
         replaceImages(
-            actingUser.getUserId(),
-            buildId, dto.imageIds()
-        );
+                actingUser.getUserId(),
+                buildId, dto.imageIds());
 
         return buildId;
     }
 
-    @Transactional
     public void replaceImages(Integer actingUserId, Integer buildId, List<Integer> imageIds) {
 
         buildImageDAO.deleteByBuildId(actingUserId, buildId);
@@ -82,11 +77,10 @@ public class BuildService {
         int sortOrder = 0;
         for (Integer imageId : imageIds) {
             buildImageDAO.create(
-                actingUserId,
-                buildId,
-                imageId,
-                sortOrder++
-            );
+                    actingUserId,
+                    buildId,
+                    imageId,
+                    sortOrder++);
         }
     }
 }

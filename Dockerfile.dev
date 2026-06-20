@@ -1,0 +1,19 @@
+FROM eclipse-temurin:21-jdk-jammy
+WORKDIR /app
+
+# Cache dependencies in their own layer
+COPY pom.xml .
+COPY .mvn .mvn
+COPY mvnw .
+RUN ./mvnw dependency:go-offline -B
+
+# This COPY only matters for the very first build. Once the container is
+# running, docker-compose.override.yml bind-mounts ./src over this so edits
+# on your host are picked up immediately by spring-boot-devtools.
+COPY src ./src
+
+EXPOSE 8080
+# LiveReload port used by spring-boot-devtools
+EXPOSE 35729
+
+CMD ["./mvnw", "spring-boot:run"]

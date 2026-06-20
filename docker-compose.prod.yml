@@ -1,0 +1,49 @@
+# Loaded explicitly, never automatically:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#
+# Credentials come from files in ./secrets/, mounted into the containers at
+# /run/secrets/<name>. This keeps passwords out of `docker inspect`, process
+# environment dumps, and shell history — see secrets/README.md for setup.
+
+services:
+  mariadb:
+    environment:
+      MARIADB_ROOT_PASSWORD_FILE: /run/secrets/db_root_password
+      MARIADB_DATABASE: smpdb
+      MARIADB_USER: smpdb_app
+      MARIADB_PASSWORD_FILE: /run/secrets/db_app_password
+    secrets:
+      - db_root_password
+      - db_app_password
+    ports:
+      # Open to your LAN so DBeaver on other machines can connect directly.
+      # The MariaDB image auto-grants smpdb_app full privileges on smpdb,
+      # so those are the credentials you use in DBeaver too — same account
+      # as the app, full read/write, nothing extra to set up.
+      #
+      # This is safe as long as port 3306 is NOT forwarded through your
+      # router to the internet, and your server's firewall restricts it
+      # to your LAN subnet (see README).
+      - "3306:3306"
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:mariadb://mariadb:3306/smpdb
+      SPRING_DATASOURCE_USERNAME: smpdb_app
+      SPRING_DATASOURCE_PASSWORD_FILE: /run/secrets/db_app_password
+    secrets:
+      - db_app_password
+    deploy:
+      resources:
+        limits:
+          memory: 768M
+
+secrets:
+  db_root_password:
+    file: ./secrets/db_root_password.txt
+  db_app_password:
+    file: ./secrets/db_app_password.txt

@@ -1,0 +1,40 @@
+# Base service definitions shared by dev and prod.
+# Credentials and environment-specific behavior live in the override files:
+#   - docker-compose.override.yml  -> auto-loaded for local dev
+#   - docker-compose.prod.yml      -> loaded explicitly for production
+
+services:
+  mariadb:
+    image: mariadb:11.4
+    restart: unless-stopped
+    networks:
+      - smpdb_net
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      # Everything in ./init-db/ runs once, in filename order, the first
+      # time mariadb_data is empty. Put all your .sql scripts in there —
+      # see the "Database init scripts" section in README-docker.md.
+      - ./init-db:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+    restart: unless-stopped
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    networks:
+      - smpdb_net
+    ports:
+      - "8080:8080"
+
+networks:
+  smpdb_net:
+
+volumes:
+  mariadb_data:

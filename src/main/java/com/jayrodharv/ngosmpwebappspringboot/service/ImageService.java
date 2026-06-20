@@ -4,7 +4,6 @@ import com.jayrodharv.ngosmpwebappspringboot.dao.ImageDAO;
 import com.jayrodharv.ngosmpwebappspringboot.dto.image.StoredFileDTO;
 import com.jayrodharv.ngosmpwebappspringboot.dto.image.UploadImageResponseDTO;
 
-import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 
 import java.io.IOException;
@@ -19,7 +18,6 @@ public class ImageService {
     private final ImageDAO imageDAO;
     private final FileStorageService fileStorageService;
 
-    @Transactional
     public UploadImageResponseDTO uploadImage(Integer actingUserId, MultipartFile file) throws IOException {
 
         StoredFileDTO stored = fileStorageService.store(file);

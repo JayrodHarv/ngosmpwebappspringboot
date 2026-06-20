@@ -9,15 +9,17 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.jayrodharv.ngosmpwebappspringboot.dto.image.StoredFileDTO;
 
+@Service
 public class FileStorageService {
 
     private final Path uploadRoot;
 
-    public FileStorageService (@Value("${app.upload.dir:./uploads}") String uploadDir) {
+    public FileStorageService(@Value("${app.upload.dir:./uploads}") String uploadDir) {
         this.uploadRoot = Path.of(uploadDir);
     }
 
@@ -38,7 +40,7 @@ public class FileStorageService {
             throw new IOException("Unable to find or create parent directories: " + destination.getParent());
         }
 
-        if(!Files.exists(destination)) {
+        if (!Files.exists(destination)) {
             try {
                 file.transferTo(destination);
             } catch (IllegalStateException | IOException e) {
@@ -47,12 +49,11 @@ public class FileStorageService {
         }
 
         return new StoredFileDTO(
-            file.getOriginalFilename(),
-            file.getContentType(),
-            file.getSize(),
-            dbPath,
-            hash
-        );
+                file.getOriginalFilename(),
+                file.getContentType(),
+                file.getSize(),
+                dbPath,
+                hash);
     }
 
     private String getExtension(MultipartFile file) {
@@ -73,9 +74,8 @@ public class FileStorageService {
 
     private Path buildPath(String hash, String extension) {
         return Path.of(
-            "images/",
-            hash + extension
-        );
+                "images/",
+                hash + extension);
     }
 
     private String calculateHash(MultipartFile file) throws IOException {
@@ -97,12 +97,12 @@ public class FileStorageService {
             }
 
             return HexFormat.of()
-                .formatHex(digest.digest());
+                    .formatHex(digest.digest());
 
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException(
-                "SHA-256 algorithm unavailable",
-                e);
+                    "SHA-256 algorithm unavailable",
+                    e);
         }
     }
 }

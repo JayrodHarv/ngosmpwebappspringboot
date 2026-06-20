@@ -1,0 +1,36 @@
+# Automatically merged with docker-compose.yml when you run `docker compose up`
+# with no -f flags. This is your local dev config.
+#
+# Plain environment variables (not Docker secrets) are fine here: this
+# database only ever exists on your machine and the password is thrown
+# away every time you tear the container down. Production uses real
+# secrets — see docker-compose.prod.yml.
+
+services:
+  mariadb:
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-devroot}
+      MARIADB_DATABASE: smpdb
+      MARIADB_USER: smpdb_app
+      MARIADB_PASSWORD: ${DB_APP_PASSWORD:-devpass}
+    ports:
+      # Exposed to the host so you can connect with DBeaver, mysql CLI, etc.
+      - "3306:3306"
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:mariadb://mariadb:3306/smpdb
+      SPRING_DATASOURCE_USERNAME: smpdb_app
+      SPRING_DATASOURCE_PASSWORD: ${DB_APP_PASSWORD:-devpass}
+    volumes:
+      # Bind-mount source so devtools restarts pick up your edits without
+      # rebuilding the image. Edit in Neovim on the host as usual.
+      - ./src:/app/src
+      - ./pom.xml:/app/pom.xml
+    ports:
+      - "8080:8080"
+      - "35729:35729"
