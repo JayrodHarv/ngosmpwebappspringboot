@@ -23,15 +23,15 @@ CREATE TABLE image (
     created_by      INT                 NOT NULL,
     created_at      DATETIME            NOT NULL    DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT pk_image_id                  PRIMARY KEY (image_id),
-    CONSTRAINT uq_image_file_hash           UNIQUE KEY (file_hash)
+    CONSTRAINT pk_image_id              PRIMARY KEY (image_id),
+    CONSTRAINT uq_image_file_hash       UNIQUE KEY (file_hash)
 );
 
 /*----------------------------------- USER ------------------------------------*/
 
 DROP TABLE IF EXISTS user;
 CREATE TABLE user (
-    user_id         INT                                     NOT NULL AUTO_INCREMENT,
+    user_id         INT                                     NOT NULL    AUTO_INCREMENT,
     email           VARCHAR(255)                            NOT NULL,
     display_name    VARCHAR(50)                             NOT NULL,
     password_hash   VARCHAR(255)                            NOT NULL,
@@ -448,6 +448,10 @@ CREATE TABLE build_tag (
         REFERENCES  build(build_id)
             ON UPDATE CASCADE
             ON DELETE RESTRICT,
+    CONSTRAINT fk_build_tag_tag_id      FOREIGN KEY (tag_id)
+        REFERENCES tag(tag_id)
+            ON UPDATE CASCADE
+            ON DELETE CASCADE,
     CONSTRAINT fk_build_tag_created_by  FOREIGN KEY (created_by)
         REFERENCES user(user_id)
             ON UPDATE CASCADE
@@ -468,6 +472,14 @@ CREATE TABLE build_image (
 
     CONSTRAINT uq_build_image               PRIMARY KEY (build_id, image_id),
     CONSTRAINT uq_build_image_sort          UNIQUE KEY (build_id, sort_order),
+    CONSTRAINT fk_build_image_build_id      FOREIGN KEY (build_id)
+        REFERENCES build(build_id)
+            ON UPDATE CASCADE
+            ON DELETE RESTRICT,
+    CONSTRAINT fk_build_image_image_id      FOREIGN KEY (image_id)
+        REFERENCES image(image_id)
+            ON UPDATE CASCADE
+            ON DELETE CASCADE,
     CONSTRAINT fk_build_image_created_by    FOREIGN KEY (created_by)
         REFERENCES user(user_id)
             ON UPDATE CASCADE
@@ -533,11 +545,11 @@ CREATE TABLE vote_option (
         REFERENCES vote(vote_id)
             ON UPDATE CASCADE
             ON DELETE CASCADE,
-    CONSTRAINT fk_vote_created_by       FOREIGN KEY (created_by)
+    CONSTRAINT fk_vote_option_created_by       FOREIGN KEY (created_by)
         REFERENCES user(user_id)
             ON UPDATE CASCADE
             ON DELETE RESTRICT,
-    CONSTRAINT fk_vote_updated_by       FOREIGN KEY (updated_by)
+    CONSTRAINT fk_vote_option_updated_by       FOREIGN KEY (updated_by)
         REFERENCES user(user_id)
             ON UPDATE CASCADE
             ON DELETE RESTRICT

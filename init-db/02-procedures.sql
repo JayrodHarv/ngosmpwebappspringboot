@@ -8,6 +8,7 @@ USE smpdb;
 
 /*----------- INSERT IMAGE ------------*/
 DROP PROCEDURE IF EXISTS sp_insert_image;
+DELIMITER $$
 CREATE PROCEDURE sp_insert_image (
     IN  p_acting_user_id    INT,
     IN  p_file_name         VARCHAR(255),
@@ -53,10 +54,12 @@ proc: BEGIN
 
     -- Return inserted id
     SET p_image_id = LAST_INSERT_ID();
-END proc;
+END proc$$
+DELIMITER ;
 
 /*----------- UPDATE IMAGE ------------*/
 DROP PROCEDURE IF EXISTS sp_update_image;
+DELIMITER $$
 CREATE PROCEDURE sp_update_image (
     IN p_acting_user_id    INT,
     IN p_image_id          INT,
@@ -78,10 +81,12 @@ BEGIN
             file_path = p_file_path,
             file_hash = p_file_hash
     WHERE image_id = p_image_id;
-END;
+END$$
+DELIMITER ;
 
 /*----------- DELETE IMAGE ------------*/
 DROP PROCEDURE IF EXISTS sp_delete_image;
+DELIMITER $$
 CREATE PROCEDURE sp_delete_image (
     IN p_acting_user_id     INT,
     IN p_image_id           INT
@@ -93,10 +98,12 @@ BEGIN
     -- Perform operation
     DELETE FROM image
     WHERE image_id = p_image_id;
-END;
+END$$
+DELIMITER ;
 
 /*----------- GET IMAGE ------------*/
 DROP PROCEDURE IF EXISTS sp_get_image;
+DELIMITER $$
 CREATE PROCEDURE sp_get_image (
     IN      p_image_id      INT
 )
@@ -112,10 +119,12 @@ BEGIN
     LEFT JOIN user u
         ON u.user_id = i.created_by
     WHERE image_id = p_image_id;
-END;
+END$$
+DELIMITER ;
 
 /*----------- GET IMAGES ------------*/
 DROP PROCEDURE IF EXISTS sp_get_images;
+DELIMITER $$
 CREATE PROCEDURE sp_get_images (
     IN p_limit  INT,
     IN p_offset INT
@@ -135,12 +144,14 @@ BEGIN
     WHERE image_id = p_image_id
     ORDER BY i.created_at DESC
     LIMIT p_limit OFFSET p_offset;
-END;
+END$$
+DELIMITER ;
 
 /*----------------------------------- USER ------------------------------------*/
 
 /*----------- REGISTER USER ------------*/
 DROP PROCEDURE IF EXISTS sp_register_user;
+DELIMITER $$
 CREATE PROCEDURE sp_register_user (
     IN  p_email         VARCHAR(255),
     IN  p_display_name  VARCHAR(50),
@@ -184,10 +195,12 @@ BEGIN
     );
 
     COMMIT;
-END;
+END$$
+DELIMITER ;
 
 /*----------- LOGIN USER ------------*/
 DROP PROCEDURE IF EXISTS sp_login_user;
+DELIMITER $$
 CREATE PROCEDURE sp_login_user (
     IN  p_email         VARCHAR(255)
 )
@@ -198,10 +211,12 @@ BEGIN
             status
     FROM user
     WHERE email = p_email;
-END;
+END$$
+DELIMITER ;
 
 /*----------- UPDATE USER ------------*/
 DROP PROCEDURE IF EXISTS sp_update_user;
+DELIMITER $$
 CREATE PROCEDURE sp_update_user (
     IN  p_acting_user_id    INT,
     IN  p_user_id           INT,
@@ -230,10 +245,12 @@ BEGIN
             pfp_image_id    = p_pfp_image_id,
             updated_by = p_acting_user_id
     WHERE   user_id = p_user_id;
-END;
+END$$
+DELIMITER ;
 
 /* ----------- UPDATE USER STATUS (lock / unlock / deactivate) ------------ */
 DROP PROCEDURE IF EXISTS sp_update_user_status;
+DELIMITER $$
 CREATE PROCEDURE sp_update_user_status (
     IN p_acting_user_id INT,
     IN p_user_id        INT,
@@ -247,10 +264,12 @@ BEGIN
     SET    status          = p_status,
            updated_by = p_acting_user_id
     WHERE  user_id = p_user_id;
-END;
+END$$
+DELIMITER ;
 
 /*----------- UPDATE USER PASSWORD ------------*/
 DROP PROCEDURE IF EXISTS sp_update_user_password;
+DELIMITER $$
 CREATE PROCEDURE sp_update_user_password (
     IN  p_acting_user_id        INT,
     IN  p_user_id               INT,
@@ -265,10 +284,12 @@ BEGIN
     SET     password_hash   = p_password_hash,
             updated_by = p_acting_user_id
     WHERE   user_id = p_user_id;
-END;
+END$$
+DELIMITER ;
 
 /*----------- DELETE USER ------------*/
 DROP PROCEDURE IF EXISTS sp_delete_user;
+DELIMITER $$
 CREATE PROCEDURE sp_delete_user (
     IN p_acting_user_id     INT,
     IN p_user_id            INT
@@ -282,10 +303,12 @@ BEGIN
     SET     status          = 'INACTIVE',
             updated_by = p_acting_user_id
     WHERE   user_id = p_user_id;
-END;
+END$$
+DELIMITER ;
 
 /* ----------- GET USER ------------ */
 DROP PROCEDURE IF EXISTS sp_get_user;
+DELIMITER $$
 CREATE PROCEDURE sp_get_user (
     IN p_acting_user_id INT,
     IN p_user_id        INT
@@ -301,10 +324,12 @@ BEGIN
     LEFT JOIN image i
         ON i.image_id = u.pfp_image_id
     WHERE   u.user_id = p_user_id;
-END;
+END$$
+DELIMITER ;
 
 /* ----------- GET USER ACCOUNT (includes email) ------------ */
 DROP PROCEDURE IF EXISTS sp_get_user_account;
+DELIMITER $$
 CREATE PROCEDURE sp_get_user_account (
     IN p_acting_user_id INT,
     IN p_user_id        INT
@@ -322,10 +347,12 @@ BEGIN
     LEFT JOIN image i 
         ON i.image_id = u.pfp_image_id
     WHERE   u.user_id = p_user_id;
-END;
+END$$
+DELIMITER ;
 
 /* ----------- GET USERS (paged) ------------ */
 DROP PROCEDURE IF EXISTS sp_get_users;
+DELIMITER $$
 CREATE PROCEDURE sp_get_users (
     IN p_acting_user_id INT,
     IN p_search         VARCHAR(100),
@@ -358,10 +385,12 @@ BEGIN
             WHEN p_descending = FALSE THEN u.created_at
         END ASC
     LIMIT p_limit OFFSET p_offset;
-END;
+END$$
+DELIMITER ;
 
 /* ----------- COUNT USERS ------------ */
 DROP PROCEDURE IF EXISTS sp_count_users;
+DELIMITER $$
 CREATE PROCEDURE sp_count_users (
     IN p_acting_user_id INT,
     IN p_search         VARCHAR(255),
@@ -380,10 +409,12 @@ BEGIN
             p_status IS NULL
             OR u.status = p_status
         );
-END;
+END$$
+DELIMITER ;
 
 /* ----------- BAN USER ------------ */
 DROP PROCEDURE IF EXISTS sp_ban_user;
+DELIMITER $$
 CREATE PROCEDURE sp_ban_user (
 	IN p_acting_user_id	INT,
 	IN p_user_id		INT
@@ -396,10 +427,12 @@ BEGIN
 	SET status = 'LOCKED',
 		last_updated_by = p_acting_user_id
 	WHERE user_id = p_user_id;
-END;
+END$$
+DELIMITER ;
 
 /* ----------- UPDATE LAST SEEN ------------ */
 DROP PROCEDURE IF EXISTS sp_update_user_last_seen;
+DELIMITER $$
 CREATE PROCEDURE sp_update_user_last_seen (
     IN p_user_id INT
 )
@@ -410,10 +443,12 @@ BEGIN
     UPDATE user 
     SET last_seen = CURRENT_TIMESTAMP
     WHERE user_id = p_user_id;
-END;
+END$$
+DELIMITER ;
 
 /* ----------- GET USER PERMISSIONS (effective — role + direct) ------------ */
 DROP PROCEDURE IF EXISTS sp_get_user_permissions;
+DELIMITER $$
 CREATE PROCEDURE sp_get_user_permissions (
     IN p_user_id        INT
 )
@@ -436,12 +471,14 @@ BEGIN
         WHERE  up.user_id = p_user_id
     )
     ORDER BY p.name;
-END;
+END$$
+DELIMITER ;
 
 /*----------------------------------- ROLE ------------------------------------*/
 
 /* ----------- INSERT ROLE ------------ */
 DROP PROCEDURE IF EXISTS sp_insert_role;
+DELIMITER $$
 CREATE PROCEDURE sp_insert_role (
     IN  p_acting_user_id INT,
     IN  p_name           VARCHAR(50),
@@ -470,10 +507,12 @@ BEGIN
     );
 
     SET p_role_id = LAST_INSERT_ID();
-END;
+END$$
+DELIMITER ;
 
 /* ----------- UPDATE ROLE ------------ */
 DROP PROCEDURE IF EXISTS sp_update_role;
+DELIMITER $$
 CREATE PROCEDURE sp_update_role (
     IN p_acting_user_id INT,
     IN p_role_id        INT,
@@ -493,10 +532,12 @@ BEGIN
            description = p_description,
            updated_by  = p_acting_user_id
     WHERE  role_id = p_role_id;
-END;
+END$$
+DELIMITER ;
 
 /* ----------- DELETE ROLE ------------ */
 DROP PROCEDURE IF EXISTS sp_delete_role;
+DELIMITER $$
 CREATE PROCEDURE sp_delete_role (
     IN p_acting_user_id INT,
     IN p_role_id        INT
@@ -511,10 +552,12 @@ BEGIN
 
     DELETE FROM role
     WHERE role_id = p_role_id;
-END;
+END$$
+DELIMITER ;
 
 /* ----------- GET ROLE ------------ */
 DROP PROCEDURE IF EXISTS sp_get_role;
+DELIMITER $$
 CREATE PROCEDURE sp_get_role (
     IN p_acting_user_id INT,
     IN p_role_id        INT
@@ -527,10 +570,12 @@ BEGIN
             updated_at
     FROM role
     WHERE role_id = p_role_id;
-END;
+END$$
+DELIMITER ;
 
 /* ----------- GET ROLES ------------ */
 DROP PROCEDURE IF EXISTS sp_get_roles;
+DELIMITER $$
 CREATE PROCEDURE sp_get_roles (
     IN p_acting_user_id INT
 )
@@ -542,10 +587,12 @@ BEGIN
             updated_at
     FROM role
     ORDER BY name;
-END;
+END$$
+DELIMITER ;
 
 /* ----------- ASSIGN ROLE TO USER ------------ */
 DROP PROCEDURE IF EXISTS sp_assign_user_role;
+DELIMITER $$
 CREATE PROCEDURE sp_assign_user_role (
     IN p_acting_user_id INT,
     IN p_user_id        INT,
@@ -573,10 +620,12 @@ BEGIN
         p_role_id,
         p_acting_user_id
     );
-END;
+END$$
+DELIMITER ;
 
 /* ----------- REVOKE ROLE FROM USER ------------ */
 DROP PROCEDURE IF EXISTS sp_revoke_user_role;
+DELIMITER $$
 CREATE PROCEDURE sp_revoke_user_role (
     IN p_acting_user_id INT,
     IN p_user_id        INT,
@@ -589,10 +638,12 @@ BEGIN
     DELETE FROM user_role
     WHERE user_id = p_user_id 
         AND role_id = p_role_id;
-END;
+END$$
+DELIMITER ;
 
 /* ----------- GET USER ROLES ------------ */
 DROP PROCEDURE IF EXISTS sp_get_user_roles;
+DELIMITER $$
 CREATE PROCEDURE sp_get_user_roles (
     IN p_user_id        INT
 )
@@ -605,12 +656,14 @@ BEGIN
         ON r.role_id = ur.role_id
     WHERE   ur.user_id = p_user_id
     ORDER BY r.name;
-END;
+END$$
+DELIMITER ;
 
 /*----------------------------------- PERMISSION ------------------------------------*/
 
 /* ----------- GET ALL PERMISSIONS ------------ */
 DROP PROCEDURE IF EXISTS sp_get_permissions;
+DELIMITER $$
 CREATE PROCEDURE sp_get_permissions (
     IN p_acting_user_id INT
 )
@@ -620,10 +673,12 @@ BEGIN
             description
     FROM    permission
     ORDER BY name;
-END;
+END$$
+DELIMITER ;
 
 /* ----------- ASSIGN PERMISSION TO ROLE ------------ */
 DROP PROCEDURE IF EXISTS sp_assign_role_permission;
+DELIMITER $$
 CREATE PROCEDURE sp_assign_role_permission (
     IN p_acting_user_id INT,
     IN p_role_id        INT,
@@ -641,10 +696,12 @@ BEGIN
         p_role_id,
         p_permission_id
     );
-END;
+END$$
+DELIMITER ;
 
 /* ----------- REVOKE PERMISSION FROM ROLE ------------ */
 DROP PROCEDURE IF EXISTS sp_revoke_role_permission;
+DELIMITER $$
 CREATE PROCEDURE sp_revoke_role_permission (
     IN p_acting_user_id INT,
     IN p_role_id        INT,
@@ -657,10 +714,12 @@ BEGIN
     DELETE FROM role_permission
     WHERE role_id = p_role_id
         AND permission_id = p_permission_id;
-END;
+END$$
+DELIMITER ;
 
 /* ----------- GET ROLE PERMISSIONS ------------ */
 DROP PROCEDURE IF EXISTS sp_get_role_permissions;
+DELIMITER $$
 CREATE PROCEDURE sp_get_role_permissions (
     IN p_acting_user_id INT,
     IN p_role_id        INT
@@ -672,10 +731,12 @@ BEGIN
         ON p.permission_id = rp.permission_id
     WHERE   rp.role_id = p_role_id
     ORDER BY p.name;
-END;
+END$$
+DELIMITER ;
 
 /* ----------- ASSIGN DIRECT PERMISSION TO USER ------------ */
 DROP PROCEDURE IF EXISTS sp_assign_user_permission;
+DELIMITER $$
 CREATE PROCEDURE sp_assign_user_permission (
     IN p_acting_user_id INT,
     IN p_user_id        INT,
@@ -693,10 +754,12 @@ BEGIN
         p_user_id,
         p_permission_id
     );
-END;
+END$$
+DELIMITER ;
 
 /* ----------- REVOKE DIRECT PERMISSION FROM USER ------------ */
 DROP PROCEDURE IF EXISTS sp_revoke_user_permission;
+DELIMITER $$
 CREATE PROCEDURE sp_revoke_user_permission (
     IN p_acting_user_id INT,
     IN p_user_id        INT,
@@ -709,12 +772,14 @@ BEGIN
     DELETE FROM user_permission
     WHERE user_id = p_user_id 
         AND permission_id = p_permission_id;
-END;
+END$$
+DELIMITER ;
 
 /*----------------------------------- TAG ------------------------------------*/
 
 /* ----------- INSERT TAG ------------ */
 DROP PROCEDURE IF EXISTS sp_insert_tag;
+DELIMITER $$
 CREATE PROCEDURE sp_insert_tag (
     IN  p_acting_user_id INT,
     IN  p_tag_type_id    INT,
@@ -753,10 +818,12 @@ BEGIN
         tag_id = LAST_INSERT_ID(tag_id);
 
     SET p_tag_id = LAST_INSERT_ID();
-END;
+END$$
+DELIMITER ;
 
 /* ----------- UPDATE TAG ------------ */
 DROP PROCEDURE IF EXISTS sp_update_tag;
+DELIMITER $$
 CREATE PROCEDURE sp_update_tag (
     IN p_acting_user_id INT,
     IN p_tag_id         INT,
@@ -777,10 +844,12 @@ BEGIN
            last_updated_by = p_acting_user_id,
            last_updated_at = CURRENT_TIMESTAMP
     WHERE  tag_id = p_tag_id;
-END;
+END$$
+DELIMITER ;
 
 /* ----------- DELETE TAG ------------ */
 DROP PROCEDURE IF EXISTS sp_delete_tag;
+DELIMITER $$
 CREATE PROCEDURE sp_delete_tag (
     IN p_acting_user_id INT,
     IN p_tag_id         INT
@@ -795,10 +864,12 @@ BEGIN
 
     DELETE FROM tag
     WHERE tag_id = p_tag_id;
-END;
+END$$
+DELIMITER ;
 
 /* ----------- GET TAG ------------ */
 DROP PROCEDURE IF EXISTS sp_get_tag;
+DELIMITER $$
 CREATE PROCEDURE sp_get_tag (
     IN p_tag_id INT
 )
@@ -808,10 +879,12 @@ BEGIN
     FROM    tag t
     JOIN    tag_type tt ON tt.tag_type_id = t.tag_type_id
     WHERE   t.tag_id = p_tag_id;
-END;
+END$$
+DELIMITER ;
 
 /* ----------- GET TAGS ------------ */
 DROP PROCEDURE IF EXISTS sp_get_tags;
+DELIMITER $$
 CREATE PROCEDURE sp_get_tags (
     IN p_tag_type_id INT  -- NULL = all types
 )
@@ -828,12 +901,14 @@ BEGIN
     WHERE p_tag_type_id IS NULL
         OR t.tag_type_id = p_tag_type_id
     ORDER BY tt.name, t.name;
-END;
+END$$
+DELIMITER ;
 
 /*----------------------------------- BUILD ------------------------------------*/
 
 /* ----------- INSERT BUILD ------------ */
 DROP PROCEDURE IF EXISTS sp_insert_build;
+DELIMITER $$
 CREATE PROCEDURE sp_insert_build (
     IN  p_acting_user_id INT,
     IN  p_name           VARCHAR(100),
@@ -872,10 +947,12 @@ BEGIN
     );
 
     SET p_build_id = LAST_INSERT_ID();
-END;
+END$$
+DELIMITER ;
 
 /* ----------- UPDATE BUILD ------------ */
 DROP PROCEDURE IF EXISTS sp_update_build;
+DELIMITER $$
 CREATE PROCEDURE sp_update_build (
     IN p_acting_user_id  INT,
     IN p_build_id        INT,
@@ -909,10 +986,12 @@ BEGIN
         z_coord          = p_z_coord,
         primary_image_id = p_primary_image_id
     WHERE build_id = p_build_id;
-END;
+END$$
+DELIMITER ;
 
 /* ----------- DELETE BUILD ------------ */
 DROP PROCEDURE IF EXISTS sp_delete_build;
+DELIMITER $$
 CREATE PROCEDURE sp_delete_build (
     IN p_acting_user_id INT,
     IN p_build_id       INT
@@ -927,10 +1006,12 @@ BEGIN
 
     DELETE FROM build
     WHERE build_id = p_build_id;
-END;
+END$$
+DELIMITER ;
 
 /* ----------- GET BUILD ------------ */
 DROP PROCEDURE IF EXISTS sp_get_build;
+DELIMITER $$
 CREATE PROCEDURE sp_get_build (
     IN p_build_id INT
 )
@@ -953,10 +1034,12 @@ BEGIN
     LEFT JOIN image pi
         ON pi.image_id = b.primary_image_id
     WHERE b.build_id = p_build_id;
-END;
+END$$
+DELIMITER ;
 
 /* ----------- GET BUILDS (paged, searched, sorted) ------------ */
 DROP PROCEDURE IF EXISTS sp_get_builds;
+DELIMITER $$
 CREATE PROCEDURE sp_get_builds (
     IN p_search         VARCHAR(255),
     IN p_descending     BOOLEAN,
@@ -972,7 +1055,7 @@ BEGIN
             b.y_coord,
             b.z_coord,
             b.created_at,
-            b.primary_image_id,
+            i.image_id,
             i.file_path AS primary_image_path,
 
             b.created_by,
@@ -983,8 +1066,11 @@ BEGIN
     FROM build b
     JOIN user u
         ON u.user_id = b.created_by
+    LEFT JOIN build_image bi
+        ON bi.build_id = b.build_id
+        AND bi.sort_order = 0
     LEFT JOIN image i
-        ON i.image_id = b.primary_image_id
+        ON i.image_id = bi.image_id
     WHERE
         (
             p_search IS NULL
@@ -1014,10 +1100,12 @@ BEGIN
         b.build_id DESC
 
     LIMIT p_limit OFFSET p_offset;
-END;
+END$$
+DELIMITER ;
 
 /* ----------- ADD TAG TO BUILD ------------ */
 DROP PROCEDURE IF EXISTS sp_add_build_tag;
+DELIMITER $$
 CREATE PROCEDURE sp_add_build_tag (
     IN p_acting_user_id INT,
     IN p_build_id       INT,
@@ -1043,10 +1131,12 @@ BEGIN
         p_build_id,
         p_tag_id
     );
-END;
+END$$
+DELIMITER ;
 
 /* ----------- REMOVE TAG FROM BUILD ------------ */
 DROP PROCEDURE IF EXISTS sp_remove_build_tag;
+DELIMITER $$
 CREATE PROCEDURE sp_remove_build_tag (
     IN p_acting_user_id INT,
     IN p_build_id       INT,
@@ -1063,10 +1153,12 @@ BEGIN
     DELETE FROM build_tag
     WHERE build_id = p_build_id
         AND tag_id = p_tag_id;
-END;
+END$$
+DELIMITER ;
 
 /* ----------- GET BUILD TAGS ------------ */
 DROP PROCEDURE IF EXISTS sp_get_build_tags;
+DELIMITER $$
 CREATE PROCEDURE sp_get_build_tags (
     IN p_build_ids TEXT
 )
@@ -1084,10 +1176,12 @@ BEGIN
     JOIN tag_type tt
         ON tt.tag_type_id = t.tag_type_id
     WHERE FIND_IN_SET(bt.build_id, p_build_ids) > 0;
-END;
+END$$
+DELIMITER ;
 
 /* ----------- INSERT BUILD IMAGE ------------ */
 DROP PROCEDURE IF EXISTS sp_insert_build_image;
+DELIMITER $$
 CREATE PROCEDURE sp_insert_build_image (
     IN p_acting_user_id INT,
     IN p_build_id       INT,
@@ -1116,10 +1210,12 @@ BEGIN
         p_image_id,
         p_sort_order
     );
-END;
+END$$
+DELIMITER ;
 
 /* ----------- DELETE BUILD IMAGES ------------ */
 DROP PROCEDURE IF EXISTS sp_delete_build_images;
+DELIMITER $$
 CREATE PROCEDURE sp_delete_build_images (
     IN p_acting_user_id INT,
     IN p_build_id       INT
@@ -1134,10 +1230,12 @@ BEGIN
 
     DELETE FROM build_image
     WHERE build_id = p_build_id;
-END;
+END$$
+DELIMITER ;
 
 /* ----------- GET BUILD IMAGES ------------ */
 DROP PROCEDURE IF EXISTS sp_get_build_images;
+DELIMITER $$
 CREATE PROCEDURE sp_get_build_images (
     IN p_build_id INT
 )
@@ -1153,12 +1251,14 @@ BEGIN
         ON i.image_id = bi.image_id
     WHERE bi.build_id = p_build_id
     ORDER BY bi.sort_order;
-END;
+END$$
+DELIMITER ;
 
 /*----------------------------------- POST TYPE ------------------------------------*/
 
 /* ----------- GET POST TYPES (lookup, read-only) ------------ */
 DROP PROCEDURE IF EXISTS sp_get_post_types;
+DELIMITER $$
 CREATE PROCEDURE sp_get_post_types ()
 BEGIN
     SELECT  post_type_id,
@@ -1166,12 +1266,14 @@ BEGIN
             description
     FROM post_type
     ORDER BY name;
-END;
+END$$
+DELIMITER ;
 
 /*----------------------------------- POST ------------------------------------*/
 
 /* ----------- INSERT POST ------------ */
 DROP PROCEDURE IF EXISTS sp_insert_post;
+DELIMITER $$
 CREATE PROCEDURE sp_insert_post (
     IN  p_acting_user_id    INT,
     IN  p_title             VARCHAR(255),
@@ -1225,10 +1327,12 @@ BEGIN
     );
 
     SET p_post_id = LAST_INSERT_ID();
-END;
+END$$
+DELIMITER ;
 
 /* ----------- UPDATE POST ------------ */
 DROP PROCEDURE IF EXISTS sp_update_post;
+DELIMITER $$
 CREATE PROCEDURE sp_update_post (
     IN p_acting_user_id    INT,
     IN p_post_id           INT,
@@ -1265,10 +1369,12 @@ BEGIN
         featured_image_id = p_featured_image_id,
         updated_by        = p_acting_user_id
     WHERE post_id = p_post_id;
-END;
+END$$
+DELIMITER ;
 
 /* ----------- DELETE POST ------------ */
 DROP PROCEDURE IF EXISTS sp_delete_post;
+DELIMITER $$
 CREATE PROCEDURE sp_delete_post (
     IN p_acting_user_id INT,
     IN p_post_id        INT
@@ -1283,10 +1389,12 @@ BEGIN
 
     DELETE FROM post
     WHERE post_id = p_post_id;
-END;
+END$$
+DELIMITER ;
 
 /* ----------- GET POST ------------ */
 DROP PROCEDURE IF EXISTS sp_get_post;
+DELIMITER $$
 CREATE PROCEDURE sp_get_post (
     IN p_post_id INT
 )
@@ -1313,10 +1421,12 @@ BEGIN
     LEFT JOIN image i
         ON i.image_id = p.featured_image_id
     WHERE p.post_id = p_post_id;
-END;
+END$$
+DELIMITER ;
 
 /* ----------- GET POSTS (paged, optionally filtered by type) ------------ */
 DROP PROCEDURE IF EXISTS sp_get_posts;
+DELIMITER $$
 CREATE PROCEDURE sp_get_posts (
     IN p_post_type_id INT,  -- NULL = all types
     IN p_pinned_only  BIT,           -- 1 = pinned only
@@ -1349,10 +1459,12 @@ BEGIN
     ORDER BY p.is_pinned DESC,
              p.created_at DESC
     LIMIT p_limit OFFSET p_offset;
-END;
+END$$
+DELIMITER ;
 
 /* ----------- ADD TAG TO POST ------------ */
 DROP PROCEDURE IF EXISTS sp_add_post_tag;
+DELIMITER $$
 CREATE PROCEDURE sp_add_post_tag (
     IN p_acting_user_id INT,
     IN p_post_id        INT,
@@ -1374,10 +1486,12 @@ BEGIN
         p_post_id,
         p_tag_id
     );
-END;
+END$$
+DELIMITER ;
 
 /* ----------- REMOVE TAG FROM POST ------------ */
 DROP PROCEDURE IF EXISTS sp_remove_post_tag;
+DELIMITER $$
 CREATE PROCEDURE sp_remove_post_tag (
     IN p_acting_user_id INT,
     IN p_post_id        INT,
@@ -1394,10 +1508,12 @@ BEGIN
     DELETE FROM post_tag
     WHERE post_id = p_post_id
         AND tag_id = p_tag_id;
-END;
+END$$
+DELIMITER ;
 
 /* ----------- ADD IMAGE TO POST ------------ */
 DROP PROCEDURE IF EXISTS sp_add_post_image;
+DELIMITER $$
 CREATE PROCEDURE sp_add_post_image (
     IN p_acting_user_id INT,
     IN p_post_id        INT,
@@ -1426,10 +1542,12 @@ BEGIN
         p_image_id,
         p_sort_order
     );
-END;
+END$$
+DELIMITER ;
 
 /* ----------- REMOVE IMAGE FROM POST ------------ */
 DROP PROCEDURE IF EXISTS sp_remove_post_image;
+DELIMITER $$
 CREATE PROCEDURE sp_remove_post_image (
     IN p_acting_user_id INT,
     IN p_post_id        INT,
@@ -1450,12 +1568,14 @@ BEGIN
     DELETE FROM post_image
     WHERE post_id = p_post_id
         AND image_id = p_image_id;
-END;
+END$$
+DELIMITER ;
 
 /*----------------------------------- VOTE ------------------------------------*/
 
 /* ----------- INSERT VOTE ------------ */
 DROP PROCEDURE IF EXISTS sp_insert_vote;
+DELIMITER $$
 CREATE PROCEDURE sp_insert_vote (
     IN  p_acting_user_id    INT,
     IN  p_title             VARCHAR(255),
@@ -1487,10 +1607,12 @@ BEGIN
     );
 
     SET p_vote_id = LAST_INSERT_ID();
-END;
+END$$
+DELIMITER ;
 
 /* ----------- UPDATE VOTE ------------ */
 DROP PROCEDURE IF EXISTS sp_update_vote;
+DELIMITER $$
 CREATE PROCEDURE sp_update_vote (
     IN p_acting_user_id INT,
     IN p_vote_id        INT,
@@ -1511,10 +1633,12 @@ BEGIN
         description    = p_description,
         max_selections = p_max_selections
     WHERE vote_id = p_vote_id;
-END;
+END$$
+DELIMITER ;
 
 /* ----------- DELETE VOTE ------------ */
 DROP PROCEDURE IF EXISTS sp_delete_vote;
+DELIMITER $$
 CREATE PROCEDURE sp_delete_vote (
     IN p_acting_user_id INT,
     IN p_vote_id        INT
@@ -1529,10 +1653,12 @@ BEGIN
 
     DELETE FROM vote
     WHERE vote_id = p_vote_id;
-END;
+END$$
+DELIMITER ;
 
 /* ----------- GET VOTE ------------ */
 DROP PROCEDURE IF EXISTS sp_get_vote;
+DELIMITER $$
 CREATE PROCEDURE sp_get_vote (
     IN p_vote_id INT
 )
@@ -1551,10 +1677,12 @@ BEGIN
     JOIN user u
         ON u.user_id = v.user_id
     WHERE v.vote_id = p_vote_id;
-END;
+END$$
+DELIMITER ;
 
 /* ----------- GET VOTES (paged) ------------ */
 DROP PROCEDURE IF EXISTS sp_get_votes;
+DELIMITER $$
 CREATE PROCEDURE sp_get_votes (
     IN p_status ENUM('DRAFT','ACTIVE','CLOSED'),  -- NULL = all
     IN p_limit  INT,
@@ -1578,10 +1706,12 @@ BEGIN
         OR v.status = p_status
     ORDER BY v.created_at DESC
     LIMIT p_limit OFFSET p_offset;
-END;
+END$$
+DELIMITER ;
 
 /* ----------- PUBLISH VOTE ------------ */
 DROP PROCEDURE IF EXISTS sp_publish_vote;
+DELIMITER $$
 CREATE PROCEDURE sp_publish_vote (
     IN p_acting_user_id INT,
     IN p_vote_id        INT,
@@ -1603,10 +1733,12 @@ BEGIN
         updated_by      = p_acting_user_id
     WHERE vote_id = p_vote_id
         AND published_at IS NULL;
-END;
+END$$
+DELIMITER ;
 
 /* ----------- UN-PUBLISH VOTE ------------ */
 DROP PROCEDURE IF EXISTS sp_publish_vote;
+DELIMITER $$
 CREATE PROCEDURE sp_publish_vote (
     IN p_acting_user_id INT,
     IN p_vote_id        INT
@@ -1640,10 +1772,12 @@ BEGIN
     WHERE vote_id = p_vote_id;
 
     COMMIT;
-END;
+END$$
+DELIMITER ;
 
 /* ----------- CLOSE VOTE ------------ */
 DROP PROCEDURE IF EXISTS sp_close_vote;
+DELIMITER $$
 CREATE PROCEDURE sp_close_vote (
     IN p_acting_user_id INT,
     IN p_vote_id        INT
@@ -1660,10 +1794,12 @@ BEGIN
     SET is_closed_early = TRUE,
         updated_by      = p_acting_user_id
     WHERE vote_id = p_vote_id;
-END;
+END$$
+DELIMITER ;
 
 /* ----------- UPDATE VOTE END TIME ------------ */
 DROP PROCEDURE IF EXISTS sp_update_vote;
+DELIMITER $$
 CREATE PROCEDURE sp_update_vote (
     IN p_acting_user_id INT,
     IN p_vote_id        INT,
@@ -1684,12 +1820,14 @@ BEGIN
         description    = p_description,
         max_selections = p_max_selections
     WHERE vote_id = p_vote_id;
-END;
+END$$
+DELIMITER ;
 
 /*----------------------------------- VOTE OPTION ------------------------------------*/
 
 /* ----------- INSERT VOTE OPTION ------------ */
 DROP PROCEDURE IF EXISTS sp_insert_vote_option;
+DELIMITER $$
 CREATE PROCEDURE sp_insert_vote_option (
     IN  p_acting_user_id INT,
     IN  p_vote_id        INT,
@@ -1735,10 +1873,12 @@ BEGIN
     );
 
     SET p_option_id = LAST_INSERT_ID();
-END;
+END$$
+DELIMITER ;
 
 /* ----------- UPDATE VOTE OPTION ------------ */
 DROP PROCEDURE IF EXISTS sp_update_vote_option;
+DELIMITER $$
 CREATE PROCEDURE sp_update_vote_option (
     IN p_acting_user_id INT,
     IN p_option_id      INT,
@@ -1776,10 +1916,12 @@ BEGIN
         description = p_description,
         sort_order  = p_sort_order
     WHERE option_id = p_option_id;
-END;
+END$$
+DELIMITER ;
 
 /* ----------- DELETE VOTE OPTION ------------ */
 DROP PROCEDURE IF EXISTS sp_delete_vote_option;
+DELIMITER $$
 CREATE PROCEDURE sp_delete_vote_option (
     IN p_acting_user_id INT,
     IN p_option_id      INT
@@ -1805,10 +1947,12 @@ BEGIN
 
     DELETE FROM vote_option
     WHERE option_id = p_option_id;
-END;
+END$$
+DELIMITER ;
 
 /* ----------- GET VOTE OPTIONS ------------ */
 DROP PROCEDURE IF EXISTS sp_get_vote_options;
+DELIMITER $$
 CREATE PROCEDURE sp_get_vote_options (
     IN p_vote_id INT
 )
@@ -1821,10 +1965,12 @@ BEGIN
     FROM vote_option
     WHERE vote_id = p_vote_id
     ORDER BY sort_order;
-END;
+END$$
+DELIMITER ;
 
 /* ----------- ADD IMAGE TO VOTE OPTION ------------ */
 DROP PROCEDURE IF EXISTS sp_add_vote_option_image;
+DELIMITER $$
 CREATE PROCEDURE sp_add_vote_option_image (
     IN p_acting_user_id INT,
     IN p_option_id      INT,
@@ -1859,10 +2005,12 @@ BEGIN
         p_image_id,
         p_sort_order
     );
-END;
+END$$
+DELIMITER ;
 
 /* ----------- REMOVE IMAGE FROM VOTE OPTION ------------ */
 DROP PROCEDURE IF EXISTS sp_remove_vote_option_image;
+DELIMITER $$
 CREATE PROCEDURE sp_remove_vote_option_image (
     IN p_acting_user_id INT,
     IN p_option_id      INT,
@@ -1885,12 +2033,14 @@ BEGIN
     DELETE FROM vote_option_image
     WHERE option_id = p_option_id
         AND image_id = p_image_id;
-END;
+END$$
+DELIMITER ;
 
 /*----------------------------------- USER VOTE ------------------------------------*/
 
 /* ----------- CAST VOTE ------------ */
 DROP PROCEDURE IF EXISTS sp_cast_vote;
+DELIMITER $$
 CREATE PROCEDURE sp_cast_vote (
     IN p_acting_user_id INT,
     IN p_vote_id        INT,
@@ -1954,10 +2104,12 @@ BEGIN
         p_vote_id,
         p_option_id
     );
-END;
+END$$
+DELIMITER ;
 
 /* ----------- RETRACT VOTE ------------ */
 DROP PROCEDURE IF EXISTS sp_retract_vote;
+DELIMITER $$
 CREATE PROCEDURE sp_retract_vote (
     IN p_acting_user_id INT,
     IN p_vote_id        INT,
@@ -1981,10 +2133,12 @@ BEGIN
     WHERE user_id = p_acting_user_id
         AND vote_id = p_vote_id
         AND option_id = p_option_id;
-END;
+END$$
+DELIMITER ;
 
 /* ----------- GET VOTE RESULTS ------------ */
 DROP PROCEDURE IF EXISTS sp_get_vote_results;
+DELIMITER $$
 CREATE PROCEDURE sp_get_vote_results (
     IN p_vote_id INT
 )
@@ -2002,10 +2156,12 @@ BEGIN
                 vo.title,
                 vo.sort_order
     ORDER BY vo.sort_order;
-END;
+END$$
+DELIMITER ;
 
 /* ----------- GET USER'S SELECTIONS FOR A VOTE ------------ */
 DROP PROCEDURE IF EXISTS sp_get_user_vote_selections;
+DELIMITER $$
 CREATE PROCEDURE sp_get_user_vote_selections (
     IN p_user_id INT,
     IN p_vote_id INT
@@ -2019,13 +2175,46 @@ BEGIN
         ON vo.option_id = uv.option_id
     WHERE uv.user_id = p_user_id
         AND uv.vote_id = p_vote_id;
-END;
+END$$
+DELIMITER ;
 
 /*----------------------------------- AUDIT LOG ------------------------------------*/
 
-/* ----------- GET AUDIT LOG (paged, filterable) ------------ */
-DROP PROCEDURE IF EXISTS sp_get_audit_log;
-CREATE PROCEDURE sp_get_audit_log (
+/*----------- INSERT AUDIT LOG ------------*/
+DROP PROCEDURE IF EXISTS sp_insert_audit_log;
+DELIMITER $$
+CREATE PROCEDURE sp_insert_audit_log (
+    IN p_table_name     VARCHAR(100),
+    IN p_action_type    ENUM('INSERT','UPDATE','DELETE'),
+    IN p_record_id      INT UNSIGNED,
+    IN p_changed_by     INT UNSIGNED,
+    IN p_old_values     JSON,
+    IN p_new_values     JSON
+)
+BEGIN
+    INSERT INTO audit_log (
+        table_name,
+        action_type,
+        record_id,
+        changed_by,
+        old_values,
+        new_values
+    )
+    VALUES (
+        p_table_name,
+        p_action_type,
+        p_record_id,
+        p_changed_by,
+        p_old_values,
+        p_new_values
+    );
+END$$
+DELIMITER ;
+
+/* ----------- GET AUDIT LOGS (paged, filterable) ------------ */
+DROP PROCEDURE IF EXISTS sp_get_audit_logs;
+DELIMITER $$
+CREATE PROCEDURE sp_get_audit_logs (
     IN p_acting_user_id INT,
     IN p_table_name     VARCHAR(100),   -- NULL = all tables
     IN p_changed_by     INT,   -- NULL = all users
@@ -2033,8 +2222,6 @@ CREATE PROCEDURE sp_get_audit_log (
     IN p_offset         INT
 )
 BEGIN
-    CALL sp_require_permission(p_acting_user_id, 'AUDIT_VIEW');
-
     SELECT  al.audit_id,
             al.table_name,
             al.action_type,
@@ -2050,4 +2237,5 @@ BEGIN
       AND   (p_changed_by IS NULL OR al.changed_by = p_changed_by)
     ORDER BY al.changed_at DESC
     LIMIT p_limit OFFSET p_offset;
-END;
+END$$
+DELIMITER ;
