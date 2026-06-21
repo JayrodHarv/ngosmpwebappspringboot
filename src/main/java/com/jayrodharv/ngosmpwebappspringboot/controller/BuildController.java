@@ -80,10 +80,9 @@ public class BuildController extends BaseController {
     @PostMapping("/new")
     public String create(
             @ModelAttribute("form") BuildFormDTO form,
-            @AuthenticationPrincipal CustomUserDetails actingUser,
             RedirectAttributes ra) {
         try {
-            Integer buildId = buildService.createBuild(actingUser, form);
+            Integer buildId = buildService.createBuild(form);
             ra.addFlashAttribute("success", "Build created successfully!");
             return "redirect:/builds";
         } catch (Exception e) {

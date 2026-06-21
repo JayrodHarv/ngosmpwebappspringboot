@@ -8,17 +8,20 @@ import com.jayrodharv.ngosmpwebappspringboot.dto.build.BuildFormDTO;
 import com.jayrodharv.ngosmpwebappspringboot.dto.build.BuildListDTO;
 import com.jayrodharv.ngosmpwebappspringboot.dto.tag.NewTagDTO;
 import com.jayrodharv.ngosmpwebappspringboot.dto.tag.TagDTO;
+import com.jayrodharv.ngosmpwebappspringboot.model.Permission;
 import com.jayrodharv.ngosmpwebappspringboot.pagination.PageRequest;
 import com.jayrodharv.ngosmpwebappspringboot.pagination.PageResult;
 
-import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @AllArgsConstructor
 public class BuildService {
@@ -26,43 +29,65 @@ public class BuildService {
     private final BuildImageDAO buildImageDAO;
     private final BuildDAO buildDAO;
     private final TagDAO tagDAO;
+    private final CurrentUserService currentUserService;
+    private final AuthorizationService auth;
 
     public PageResult<BuildListDTO> getBuilds(PageRequest request) {
-        PageResult<BuildListDTO> builds = buildDAO.getBuilds(request);
+        log.debug("Retrieving build list for request: page={}, size={}, search={}, tagIds={}, descending={}",
+            request.page(),
+            request.size(),
+            request.search(),
+            request.tagIds().toString(),
+            request.descending() ? "true" : "false"
+        );
 
-        List<Integer> buildIds = builds
-                .items()
-                .stream()
-                .map(BuildListDTO::buildId)
-                .toList();
+        PageResult<BuildListDTO> builds;
+        try {
 
-        Map<Integer, List<TagDTO>> tagsByBuild = tagDAO.getTagsForBuilds(buildIds);
+            builds = buildDAO.getBuilds(request);
 
-        for (BuildListDTO build : builds.items()) {
-            build
-                .tags()
-                .addAll(tagsByBuild.getOrDefault(tagsByBuild, List.of()));
+            List<Integer> buildIds = builds
+                    .items()
+                    .stream()
+                    .map(BuildListDTO::buildId)
+                    .toList();
+
+            Map<Integer, List<TagDTO>> tagsByBuild = tagDAO.getTagsForBuilds(buildIds);
+
+            for (BuildListDTO build : builds.items()) {
+                build
+                    .tags()
+                    .addAll(tagsByBuild.getOrDefault(tagsByBuild, List.of()));
+            }
+        } catch (Exception e) {
+            log.error("Failed to retrieve build list", e);
+            throw e;
         }
 
         return builds;
     }
 
-    public Integer createBuild(CustomUserDetails actingUser, BuildFormDTO dto) {
+    public Integer createBuild(BuildFormDTO dto) {
+
+        CustomUserDetails currentUser = currentUserService.getCurrentUser();
+
+        auth.requirePermission(currentUser , Permission.BUILD_CREATE);
+
         Set<Integer> finalTagIds = new HashSet<>(dto.tagIds());
 
         for (NewTagDTO tag : dto.newTags()) {
-            Integer tagId = tagDAO.createOrGetTag(actingUser.getUserId(), tag);
+            Integer tagId = tagDAO.createOrGetTag(currentUser.getUserId(), tag);
             finalTagIds.add(tagId);
         }
 
-        Integer buildId = buildDAO.createBuild(actingUser.getUserId(), dto);
+        Integer buildId = buildDAO.createBuild(currentUser.getUserId(), dto);
 
         for (Integer tagId : finalTagIds) {
-            buildDAO.addBuildTag(actingUser.getUserId(), buildId, tagId);
+            buildDAO.addBuildTag(currentUser.getUserId(), buildId, tagId);
         }
 
         replaceImages(
-            actingUser.getUserId(),
+            currentUser.getUserId(),
             buildId, dto.imageIds());
 
         return buildId;
