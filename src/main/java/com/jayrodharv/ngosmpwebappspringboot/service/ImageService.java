@@ -1,8 +1,8 @@
 package com.jayrodharv.ngosmpwebappspringboot.service;
 
 import com.jayrodharv.ngosmpwebappspringboot.dao.ImageDAO;
+import com.jayrodharv.ngosmpwebappspringboot.dto.image.ImageDisplayDTO;
 import com.jayrodharv.ngosmpwebappspringboot.dto.image.StoredFileDTO;
-import com.jayrodharv.ngosmpwebappspringboot.dto.image.UploadImageResponseDTO;
 
 import lombok.AllArgsConstructor;
 
@@ -18,7 +18,7 @@ public class ImageService {
     private final ImageDAO imageDAO;
     private final FileStorageService fileStorageService;
 
-    public UploadImageResponseDTO uploadImage(Integer actingUserId, MultipartFile file) throws IOException {
+    public ImageDisplayDTO uploadImage(Integer actingUserId, MultipartFile file) throws IOException {
 
         StoredFileDTO stored = fileStorageService.store(file);
 
@@ -30,7 +30,7 @@ public class ImageService {
                 stored.filePath(),
                 stored.hash());
 
-        return new UploadImageResponseDTO(
+        return new ImageDisplayDTO(
                 imageId, stored.filePath());
     }
 }

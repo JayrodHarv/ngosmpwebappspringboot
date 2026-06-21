@@ -18,7 +18,6 @@ import java.util.Map;
 import java.util.Set;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @AllArgsConstructor
@@ -37,13 +36,12 @@ public class BuildService {
                 .map(BuildListDTO::buildId)
                 .toList();
 
-        Map<Integer, List<TagDTO>> tagsByBuild = tagDAO.getTagsForBuilds(
-                buildIds);
+        Map<Integer, List<TagDTO>> tagsByBuild = tagDAO.getTagsForBuilds(buildIds);
 
         for (BuildListDTO build : builds.items()) {
             build
-                    .tags()
-                    .addAll(tagsByBuild.getOrDefault(tagsByBuild, List.of()));
+                .tags()
+                .addAll(tagsByBuild.getOrDefault(tagsByBuild, List.of()));
         }
 
         return builds;
@@ -64,8 +62,8 @@ public class BuildService {
         }
 
         replaceImages(
-                actingUser.getUserId(),
-                buildId, dto.imageIds());
+            actingUser.getUserId(),
+            buildId, dto.imageIds());
 
         return buildId;
     }

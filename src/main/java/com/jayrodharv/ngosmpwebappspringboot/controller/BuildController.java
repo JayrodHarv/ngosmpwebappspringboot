@@ -55,7 +55,7 @@ public class BuildController extends BaseController {
     @GetMapping("/new")
     public String newForm(Model model) {
         model.addAttribute(
-        "buildForm",
+        "form",
             new BuildFormDTO(
                 "",
                 "",
@@ -64,6 +64,7 @@ public class BuildController extends BaseController {
                 null,
                 null,
                 Set.of(),
+                List.of(),
                 List.of(),
                 List.of()
             )

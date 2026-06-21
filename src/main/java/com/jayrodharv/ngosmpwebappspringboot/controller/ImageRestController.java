@@ -5,7 +5,7 @@ import java.io.IOException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 import com.jayrodharv.ngosmpwebappspringboot.config.CustomUserDetails;
-import com.jayrodharv.ngosmpwebappspringboot.dto.image.UploadImageResponseDTO;
+import com.jayrodharv.ngosmpwebappspringboot.dto.image.ImageDisplayDTO;
 import com.jayrodharv.ngosmpwebappspringboot.service.ImageService;
 
 import lombok.AllArgsConstructor;
@@ -23,7 +23,7 @@ public class ImageRestController {
     private final ImageService imageService;
 
     @PostMapping("/upload")
-    public UploadImageResponseDTO upload(
+    public ImageDisplayDTO upload(
             @RequestParam MultipartFile file,
             @AuthenticationPrincipal CustomUserDetails actingUser) throws IOException {
         return imageService.uploadImage(actingUser.getUserId(), file);

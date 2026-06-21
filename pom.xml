@@ -93,6 +93,16 @@
             <scope>runtime</scope>
             <optional>true</optional>
         </dependency>
+
+        <!-- FlyWheel (database migration) -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-mysql</artifactId>
+        </dependency>
  
         <!-- Testing -->
         <dependency>

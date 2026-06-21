@@ -11,10 +11,11 @@ services:
       - smpdb_net
     volumes:
       - mariadb_data:/var/lib/mysql
-      # Everything in ./init-db/ runs once, in filename order, the first
-      # time mariadb_data is empty. Put all your .sql scripts in there —
-      # see the "Database init scripts" section in README-docker.md.
-      - ./init-db:/docker-entrypoint-initdb.d:ro
+      # No init-db mount: Flyway (running inside the app on startup) now
+      # owns schema creation and migrations. MariaDB's job is just to
+      # create the empty `smpdb` database and `smpdb_app` user, which the
+      # MARIADB_DATABASE / MARIADB_USER env vars in the override files
+      # already handle.
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 10s

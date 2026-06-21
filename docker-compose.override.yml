@@ -26,6 +26,10 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mariadb://mariadb:3306/smpdb
       SPRING_DATASOURCE_USERNAME: smpdb_app
       SPRING_DATASOURCE_PASSWORD: ${DB_APP_PASSWORD:-devpass}
+      # Dev volumes are always fresh (or wiped with `down -v`), so V1
+      # should actually run and build the schema from scratch.
+      SPRING_FLYWAY_BASELINE_ON_MIGRATE: "true"
+      SPRING_FLYWAY_BASELINE_VERSION: "0"
     volumes:
       # Bind-mount source so devtools restarts pick up your edits without
       # rebuilding the image. Edit in Neovim on the host as usual.

@@ -35,6 +35,18 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mariadb://mariadb:3306/smpdb
       SPRING_DATASOURCE_USERNAME: smpdb_app
       SPRING_DATASOURCE_PASSWORD_FILE: /run/secrets/db_app_password
+      SPRING_FLYWAY_BASELINE_ON_MIGRATE: "true"
+      # IMPORTANT — set this once, deliberately, based on your actual prod state:
+      #   - Brand new prod database, never had data: use "0" (same as dev —
+      #     V1__initial_schema.sql will actually run and build the schema).
+      #   - Prod database already has tables from the old init-db/ approach:
+      #     use "1" — this tells Flyway "V1 is already applied, don't
+      #     re-run CREATE TABLE against tables that already exist," and it
+      #     starts applying from V2 onward. Get this wrong in this
+      #     direction (using "0" on an existing database) and V1 will try
+      #     to CREATE TABLE on tables that already exist and fail loudly,
+      #     which is the safe failure mode — it won't silently corrupt data.
+      SPRING_FLYWAY_BASELINE_VERSION: "1"
     secrets:
       - db_app_password
     deploy:
