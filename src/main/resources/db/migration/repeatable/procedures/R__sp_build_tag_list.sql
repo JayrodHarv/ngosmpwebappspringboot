@@ -1,7 +1,7 @@
 DROP PROCEDURE IF EXISTS sp_build_tag_list;
 DELIMITER $$
 CREATE PROCEDURE sp_build_tag_list (
-    IN p_build_ids TEXT
+    IN p_build_id INT
 )
 BEGIN
     SELECT  bt.build_id,
@@ -16,6 +16,6 @@ BEGIN
         ON t.tag_id = bt.tag_id
     JOIN tag_type tt
         ON tt.tag_type_id = t.tag_type_id
-    WHERE FIND_IN_SET(bt.build_id, p_build_ids) > 0;
+    WHERE bt.build_id = p_build_id;
 END$$
 DELIMITER ;

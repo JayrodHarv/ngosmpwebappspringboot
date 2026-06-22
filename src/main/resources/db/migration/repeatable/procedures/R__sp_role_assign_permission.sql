@@ -6,9 +6,6 @@ CREATE PROCEDURE sp_role_assign_permission (
     IN p_permission_id  INT
 )
 BEGIN
-    -- Set session user
-    SET @current_user_id = p_acting_user_id;
-
     INSERT INTO role_permission (
         role_id,
         permission_id

@@ -5,9 +5,6 @@ CREATE PROCEDURE sp_user_deactivate (
     IN p_user_id            INT
 )
 BEGIN
-    -- Set session user
-    SET @current_user_id = p_acting_user_id;
-
     -- Set user status to 'INACTIVE'
     UPDATE  user
     SET     status          = 'INACTIVE',

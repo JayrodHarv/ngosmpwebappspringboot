@@ -6,9 +6,6 @@ CREATE PROCEDURE sp_user_assign_role (
     IN p_role_id        INT
 )
 BEGIN
-    -- Set session user
-    SET @current_user_id = p_acting_user_id;
-
     IF NOT EXISTS (SELECT 1 FROM user WHERE user_id = p_user_id) THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'User not found';
     END IF;

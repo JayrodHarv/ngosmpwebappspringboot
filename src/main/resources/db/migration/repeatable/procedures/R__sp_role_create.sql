@@ -7,9 +7,6 @@ CREATE PROCEDURE sp_role_create (
     OUT p_role_id        INT
 )
 BEGIN
-    -- Set session user
-    SET @current_user_id = p_acting_user_id;
-
     IF EXISTS (SELECT 1 FROM role WHERE name = p_name) THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Role name already in use';
     END IF;

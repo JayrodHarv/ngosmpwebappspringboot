@@ -10,9 +10,6 @@ CREATE PROCEDURE sp_image_create (
     OUT p_image_id          INT
 )
 proc: BEGIN
-    -- Set session user
-    SET @current_user_id = p_acting_user_id;
-
     -- Check if image exists already
     SELECT image_id
     INTO p_image_id

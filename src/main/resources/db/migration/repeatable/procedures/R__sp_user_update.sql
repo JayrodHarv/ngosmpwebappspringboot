@@ -7,9 +7,6 @@ CREATE PROCEDURE sp_user_update (
     IN  p_pfp_image_id      INT
 )
 BEGIN
-    -- Set session user
-    SET @current_user_id = p_acting_user_id;
-
     -- Check if display_name already taken
     IF EXISTS (SELECT 1 FROM users WHERE display_name = p_display_name) THEN
         SIGNAL SQLSTATE '45000'

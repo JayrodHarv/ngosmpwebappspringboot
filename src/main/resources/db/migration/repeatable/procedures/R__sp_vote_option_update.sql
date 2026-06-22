@@ -11,9 +11,6 @@ BEGIN
     DECLARE v_vote_id  INT;
     DECLARE v_status   VARCHAR(10);
 
-    -- Set session user
-    SET @current_user_id = p_acting_user_id;
-
     SELECT  vo.vote_id,
             v.status
     INTO    v_vote_id,

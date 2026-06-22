@@ -12,9 +12,6 @@ BEGIN
     DECLARE v_vote_id       INT;
     DECLARE v_published_at  DATETIME;
 
-    -- Set session user
-    SET @current_user_id = p_acting_user_id;
-
     SELECT  vote_id,
             published_at
     INTO    v_vote_id,

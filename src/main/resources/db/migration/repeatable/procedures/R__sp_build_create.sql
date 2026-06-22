@@ -11,9 +11,6 @@ CREATE PROCEDURE sp_build_create (
     OUT p_build_id       INT
 )
 BEGIN
-    -- Set session user
-    SET @current_user_id = p_acting_user_id;
-
     IF EXISTS (SELECT 1 FROM build WHERE name = p_name) THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Build name already in use';
     END IF;

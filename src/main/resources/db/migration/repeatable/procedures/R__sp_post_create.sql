@@ -13,9 +13,6 @@ CREATE PROCEDURE sp_post_create (
     OUT p_post_id           INT
 )
 BEGIN
-    -- Set session user
-    SET @current_user_id = p_acting_user_id;
-
     IF EXISTS (SELECT 1 FROM post WHERE title = p_title) THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Post title already in use';
     END IF;

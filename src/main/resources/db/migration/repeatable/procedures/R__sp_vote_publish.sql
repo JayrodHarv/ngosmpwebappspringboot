@@ -7,9 +7,6 @@ CREATE PROCEDURE sp_vote_publish (
     IN p_end_time       DATETIME
 )
 BEGIN
-    -- Set session user
-    SET @current_user_id = p_acting_user_id;
-
     IF NOT EXISTS (SELECT 1 FROM vote WHERE vote_id = p_vote_id) THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Vote not found';
     END IF;

@@ -10,10 +10,6 @@ CREATE PROCEDURE sp_image_update (
     IN p_file_hash         CHAR(64)
 )
 BEGIN
-    -- Set session user
-    SET @current_user_id = p_acting_user_id;
-
-    -- Perform operation
     UPDATE image
     SET     file_name = p_file_name,
             mime_type = p_mime_type,

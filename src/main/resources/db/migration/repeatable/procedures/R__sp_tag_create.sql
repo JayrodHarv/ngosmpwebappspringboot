@@ -8,9 +8,6 @@ CREATE PROCEDURE sp_tag_create (
     OUT p_tag_id         INT
 )
 BEGIN
-    -- Set session user
-    SET @current_user_id = p_acting_user_id;
-
     IF NOT EXISTS (
         SELECT 1
         FROM tag_type
