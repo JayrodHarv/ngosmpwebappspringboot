@@ -10,6 +10,7 @@ BEGIN
             t.description AS tag_description,
             tt.tag_type_id,
             tt.name AS tag_type_name,
+            tt.description AS tag_type_description,
             tt.color_hex AS tag_type_color
     FROM build_tag bt
     JOIN tag t

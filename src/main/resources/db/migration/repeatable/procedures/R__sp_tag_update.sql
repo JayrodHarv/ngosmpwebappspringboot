@@ -3,6 +3,7 @@ DELIMITER $$
 CREATE PROCEDURE sp_tag_update (
     IN p_acting_user_id INT,
     IN p_tag_id         INT,
+    IN p_tag_type_id    INT,
     IN p_name           VARCHAR(50),
     IN p_description    VARCHAR(255)
 )
@@ -12,10 +13,10 @@ BEGIN
     END IF;
 
     UPDATE tag
-    SET    name            = p_name,
-           description     = p_description,
-           last_updated_by = p_acting_user_id,
-           last_updated_at = CURRENT_TIMESTAMP
-    WHERE  tag_id = p_tag_id;
+    SET tag_type_id = p_tag_type_id,
+        name            = p_name,
+        description     = p_description,
+        updated_by = p_acting_user_id
+    WHERE tag_id = p_tag_id;
 END$$
 DELIMITER ;

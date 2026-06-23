@@ -1,12 +1,16 @@
 package com.jayrodharv.ngosmpwebappspringboot.dao;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Types;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+
+import javax.sql.DataSource;
 
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.SqlOutParameter;
+import org.springframework.jdbc.core.SqlParameter;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.simple.SimpleJdbcCall;
 import org.springframework.stereotype.Repository;
@@ -15,69 +19,95 @@ import com.jayrodharv.ngosmpwebappspringboot.dto.tag.NewTagDTO;
 import com.jayrodharv.ngosmpwebappspringboot.dto.tag.TagDTO;
 import com.jayrodharv.ngosmpwebappspringboot.dto.tag.TagTypeDTO;
 
-import lombok.AllArgsConstructor;
-
 @Repository
-@AllArgsConstructor
 public class TagDAO {
 
-    private final JdbcTemplate jdbc;
+    private final SimpleJdbcCall findByBuildIdCall;
+    private final SimpleJdbcCall findAllCall;
+    private final SimpleJdbcCall createCall;
+    private final SimpleJdbcCall updateCall;
+    private final SimpleJdbcCall deleteCall;
 
-    // Build Tags
-    public Map<Integer, List<TagDTO>> getTagsForBuilds(List<Integer> buildIds) {
+    public TagDAO(DataSource dataSource) {
+        JdbcTemplate jdbc = new JdbcTemplate(dataSource);
+        jdbc.setResultsMapCaseInsensitive(true);
 
-        if (buildIds == null || buildIds.isEmpty()) {
-            return Map.of();
-        }
+        this.findByBuildIdCall = new SimpleJdbcCall(jdbc)
+            .withProcedureName("sp_build_tag_list")
+            .declareParameters(
+                new SqlParameter("p_build_id", Types.INTEGER)
+            )
+            .returningResultSet(
+                "tags",
+                (rs, rowNum) -> mapTag(rs)
+            );
 
-        // Package up build ids to send as csv to procedure
-        String buildIdsCsv = buildIds.stream()
-            .map(String::valueOf)
-            .collect(Collectors.joining(","));
+        this.findAllCall = new SimpleJdbcCall(jdbc)
+            .withProcedureName("sp_tag_list")
+            .returningResultSet(
+                "tags",
+                (rs, rowNum) -> mapTag(rs)
+            );
 
-        Map<Integer, List<TagDTO>> result = new HashMap<>();
+        this.createCall = new SimpleJdbcCall(jdbc)
+            .withProcedureName("sp_tag_create")
+            .declareParameters(
+                new SqlParameter("p_acting_user_id", Types.INTEGER),
+                new SqlParameter("p_tag_type_id", Types.INTEGER),
+                new SqlParameter("p_name", Types.VARCHAR),
+                new SqlParameter("p_description", Types.VARCHAR),
+                new SqlOutParameter("p_tag_id", Types.INTEGER)
+            );
 
-        jdbc.query(
-            "CALL sp_get_build_tags(?)",
-            rs -> {
-                int buildId = rs.getInt("build_id");
-                
-                TagDTO tag = new TagDTO(
-                    rs.getInt("tag_id"),
-                    rs.getString("tag_name"),
-                    rs.getString("tag_description"),
+        this.updateCall = new SimpleJdbcCall(jdbc)
+            .withProcedureName("sp_tag_update")
+            .declareParameters(
+                new SqlParameter("p_acting_user_id", Types.INTEGER),
+                new SqlParameter("p_tag_id", Types.INTEGER),
+                new SqlParameter("p_tag_type_id", Types.INTEGER),
+                new SqlParameter("p_name", Types.VARCHAR),
+                new SqlParameter("p_description", Types.VARCHAR)
+            );
 
-                    new TagTypeDTO(
-                        rs.getInt("tag_type_id"),
-                        rs.getString("tag_type_name"),
-                        rs.getString("tag_type_description")
-                    )
-                );
+        this.deleteCall = new SimpleJdbcCall(jdbc)
+            .withProcedureName("sp_tag_delete")
+            .declareParameters(
+                new SqlParameter("p_acting_user_id", Types.INTEGER),
+                new SqlParameter("p_tag_id", Types.INTEGER)
+            );
+    }
 
-                result
-                    .computeIfAbsent(buildId, k -> new ArrayList<>())
-                    .add(tag);
-            },
-            buildIdsCsv
-        );
-
-        return result;
+    public List<TagDTO> getTagsByBuildId(Integer buildId) {
+        MapSqlParameterSource params = new MapSqlParameterSource()
+            .addValue("p_build_id", buildId);
+        Map<String, Object> result = findByBuildIdCall.execute(params);
+        return (List<TagDTO>) result.get("tags");
     }
 
     public Integer createOrGetTag(Integer actingUserId, NewTagDTO tag) {
-
-        SimpleJdbcCall call = new SimpleJdbcCall(jdbc).withProcedureName("sp_insert_tag");
-
-        Map<String, Object> result = call.execute(
-            new MapSqlParameterSource()
-                .addValue("p_acting_user_id", actingUserId)
-                .addValue("p_tag_type_id", tag.tagTypeId())
-                .addValue("p_name", tag.name())
-                .addValue("p_description", tag.description())
-        );
-
+        MapSqlParameterSource params = new MapSqlParameterSource()
+            .addValue("p_acting_user_id", actingUserId)
+            .addValue("p_tag_type_id", tag.tagTypeId())
+            .addValue("p_name", tag.name())
+            .addValue("p_description", tag.description());
+        Map<String, Object> result = createCall.execute(params);
         return ((Number) result.get("p_tag_id"))
-            .intValue();
+                .intValue();
     }
-    
+
+    private TagDTO mapTag(ResultSet rs) throws SQLException {
+        return new TagDTO(
+            rs.getInt("tag_id"),
+            rs.getString("tag_name"),
+            rs.getString("tag_description"),
+
+            new TagTypeDTO(
+                rs.getInt("tag_type_id"),
+                rs.getString("tag_type_name"),
+                rs.getString("tag_type_description"),
+                rs.getString("tag_type_color")
+            )
+        );
+    }
+
 }
