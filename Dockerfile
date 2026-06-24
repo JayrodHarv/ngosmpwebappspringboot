@@ -18,6 +18,10 @@ WORKDIR /app
 
 # Don't run as root inside the container
 RUN addgroup --system spring && adduser --system --ingroup spring spring
+
+# Create the logs directory owned by the spring user before switching to it
+RUN mkdir -p /app/logs && chown spring:spring /app/logs
+
 USER spring:spring
 
 COPY --from=build /app/target/*.jar app.jar

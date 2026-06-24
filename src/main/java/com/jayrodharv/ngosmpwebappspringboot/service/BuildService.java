@@ -8,6 +8,8 @@ import com.jayrodharv.ngosmpwebappspringboot.dto.build.BuildFormDTO;
 import com.jayrodharv.ngosmpwebappspringboot.dto.build.BuildListDTO;
 import com.jayrodharv.ngosmpwebappspringboot.dto.tag.NewTagDTO;
 import com.jayrodharv.ngosmpwebappspringboot.dto.tag.TagDTO;
+import com.jayrodharv.ngosmpwebappspringboot.logging.ActivityAction;
+import com.jayrodharv.ngosmpwebappspringboot.logging.AppLogger;
 import com.jayrodharv.ngosmpwebappspringboot.model.Permission;
 import com.jayrodharv.ngosmpwebappspringboot.pagination.PageRequest;
 import com.jayrodharv.ngosmpwebappspringboot.pagination.PageResult;
@@ -31,36 +33,20 @@ public class BuildService {
     private final TagDAO tagDAO;
     private final CurrentUserService currentUserService;
     private final AuthorizationService auth;
+    private final AppLogger logger;
 
     public PageResult<BuildListDTO> getBuilds(PageRequest request) {
-        log.debug("Retrieving build list for request: page={}, size={}, search={}, tagIds={}, descending={}",
-            request.page(),
-            request.size(),
-            request.search(),
-            request.tagIds().toString(),
-            request.descending() ? "true" : "false"
-        );
 
+        logger.action(ActivityAction.BUILD_LIST, "Attempting to view list of builds");
         PageResult<BuildListDTO> builds;
         try {
 
             builds = buildDAO.getBuilds(request);
 
-            List<Integer> buildIds = builds
-                    .items()
-                    .stream()
-                    .map(BuildListDTO::buildId)
-                    .toList();
+            logger.action(ActivityAction.BUILD_LIST, "Successfully recieved " + builds.size() + " builds");
 
-            Map<Integer, List<TagDTO>> tagsByBuild = tagDAO.getTagsForBuilds(buildIds);
-
-            for (BuildListDTO build : builds.items()) {
-                build
-                    .tags()
-                    .addAll(tagsByBuild.getOrDefault(tagsByBuild, List.of()));
-            }
         } catch (Exception e) {
-            log.error("Failed to retrieve build list", e);
+            logger.error("Failed to retrieve build list", e);
             throw e;
         }
 
@@ -68,6 +54,8 @@ public class BuildService {
     }
 
     public Integer createBuild(BuildFormDTO dto) {
+
+        logger.action(ActivityAction.BUILD_CREATE, "Attempting to create build");
 
         CustomUserDetails currentUser = currentUserService.getCurrentUser();
 
@@ -89,6 +77,8 @@ public class BuildService {
         replaceImages(
             currentUser.getUserId(),
             buildId, dto.imageIds());
+
+        logger.action(ActivityAction.BUILD_CREATE, "Successfully created build with id: " + buildId);
 
         return buildId;
     }

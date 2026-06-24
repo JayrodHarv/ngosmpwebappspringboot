@@ -47,6 +47,7 @@ services:
       #     to CREATE TABLE on tables that already exist and fail loudly,
       #     which is the safe failure mode — it won't silently corrupt data.
       SPRING_FLYWAY_BASELINE_VERSION: "1"
+      LOG_PATH: /app/logs
     secrets:
       - db_app_password
     deploy:

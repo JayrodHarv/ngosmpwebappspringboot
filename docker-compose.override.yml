@@ -30,11 +30,13 @@ services:
       # should actually run and build the schema from scratch.
       SPRING_FLYWAY_BASELINE_ON_MIGRATE: "true"
       SPRING_FLYWAY_BASELINE_VERSION: "0"
+      LOG_PATH: /app/logs
     volumes:
       # Bind-mount source so devtools restarts pick up your edits without
       # rebuilding the image. Edit in Neovim on the host as usual.
       - ./src:/app/src
       - ./pom.xml:/app/pom.xml
+      - ./logs:/app/logs
     ports:
       - "8080:8080"
       - "35729:35729"

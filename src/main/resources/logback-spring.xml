@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <springProperty scope="context" name="APP_NAME" source="spring.application.name" defaultValue="app"/>
+    <property name="LOG_DIR" value="${LOG_PATH:-logs}"/>
+    <property name="APP_PATTERN"
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n"/>
+
+    <!-- ══════════════════════════════════
+         CONSOLE
+    ══════════════════════════════════ -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} %highlight(%-5level) %cyan(%logger{36}) - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- ══════════════════════════════════
+         APP LOG — daily/weekly/monthly
+    ══════════════════════════════════ -->
+    <appender name="APP_DAILY" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_DIR}/app.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_DIR}/daily/app.%d{yyyy-MM-dd}.log.gz</fileNamePattern>
+            <maxHistory>7</maxHistory>
+            <totalSizeCap>500MB</totalSizeCap>
+        </rollingPolicy>
+        <encoder><pattern>${APP_PATTERN}</pattern></encoder>
+    </appender>
+
+    <appender name="APP_WEEKLY" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_DIR}/weekly/app-weekly.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_DIR}/weekly/app.%d{yyyy-'W'ww}.log.gz</fileNamePattern>
+            <maxHistory>4</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+        <encoder><pattern>${APP_PATTERN}</pattern></encoder>
+    </appender>
+
+    <appender name="APP_MONTHLY" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_DIR}/monthly/app-monthly.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_DIR}/monthly/app.%d{yyyy-MM}.log.gz</fileNamePattern>
+            <maxHistory>12</maxHistory>
+            <totalSizeCap>5GB</totalSizeCap>
+        </rollingPolicy>
+        <encoder><pattern>${APP_PATTERN}</pattern></encoder>
+    </appender>
+
+    <!-- ══════════════════════════════════
+         ASYNC WRAPPERS
+    ══════════════════════════════════ -->
+    <appender name="ASYNC_APP_DAILY" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="APP_DAILY"/>
+        <discardingThreshold>0</discardingThreshold>
+    </appender>
+    <appender name="ASYNC_APP_WEEKLY" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="APP_WEEKLY"/>
+        <discardingThreshold>0</discardingThreshold>
+    </appender>
+    <appender name="ASYNC_APP_MONTHLY" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="APP_MONTHLY"/>
+        <discardingThreshold>0</discardingThreshold>
+    </appender>
+
+    <!-- ══════════════════════════════════
+         PROFILES
+    ══════════════════════════════════ -->
+    <springProfile name="dev">
+        <root level="DEBUG">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="ASYNC_APP_DAILY"/>
+        </root>
+        <logger name="org.springframework" level="INFO"/>
+        <logger name="org.hibernate"       level="INFO"/>
+    </springProfile>
+
+    <springProfile name="prod">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="ASYNC_APP_DAILY"/>
+            <appender-ref ref="ASYNC_APP_WEEKLY"/>
+            <appender-ref ref="ASYNC_APP_MONTHLY"/>
+        </root>
+        <logger name="com.example.smpdb" level="DEBUG"/>
+    </springProfile>
+
+</configuration>
