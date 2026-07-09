@@ -33,63 +33,57 @@ public class TagDAO {
         jdbc.setResultsMapCaseInsensitive(true);
 
         this.findByBuildIdCall = new SimpleJdbcCall(jdbc)
-            .withProcedureName("sp_build_tag_list")
-            .declareParameters(
-                new SqlParameter("p_build_id", Types.INTEGER)
-            )
-            .returningResultSet(
-                "tags",
-                (rs, rowNum) -> mapTag(rs)
-            );
+                .withProcedureName("sp_build_tag_list")
+                .declareParameters(
+                        new SqlParameter("p_build_id", Types.INTEGER))
+                .returningResultSet(
+                        "tags",
+                        (rs, rowNum) -> mapTag(rs));
 
         this.findAllCall = new SimpleJdbcCall(jdbc)
-            .withProcedureName("sp_tag_list")
-            .returningResultSet(
-                "tags",
-                (rs, rowNum) -> mapTag(rs)
-            );
+                .withProcedureName("sp_tag_list")
+                .returningResultSet(
+                        "tags",
+                        (rs, rowNum) -> mapTag(rs));
 
         this.createCall = new SimpleJdbcCall(jdbc)
-            .withProcedureName("sp_tag_create")
-            .declareParameters(
-                new SqlParameter("p_acting_user_id", Types.INTEGER),
-                new SqlParameter("p_tag_type_id", Types.INTEGER),
-                new SqlParameter("p_name", Types.VARCHAR),
-                new SqlParameter("p_description", Types.VARCHAR),
-                new SqlOutParameter("p_tag_id", Types.INTEGER)
-            );
+                .withProcedureName("sp_tag_create")
+                .declareParameters(
+                        new SqlParameter("p_acting_user_id", Types.INTEGER),
+                        new SqlParameter("p_tag_type_id", Types.INTEGER),
+                        new SqlParameter("p_name", Types.VARCHAR),
+                        new SqlParameter("p_description", Types.VARCHAR),
+                        new SqlOutParameter("p_tag_id", Types.INTEGER));
 
         this.updateCall = new SimpleJdbcCall(jdbc)
-            .withProcedureName("sp_tag_update")
-            .declareParameters(
-                new SqlParameter("p_acting_user_id", Types.INTEGER),
-                new SqlParameter("p_tag_id", Types.INTEGER),
-                new SqlParameter("p_tag_type_id", Types.INTEGER),
-                new SqlParameter("p_name", Types.VARCHAR),
-                new SqlParameter("p_description", Types.VARCHAR)
-            );
+                .withProcedureName("sp_tag_update")
+                .declareParameters(
+                        new SqlParameter("p_acting_user_id", Types.INTEGER),
+                        new SqlParameter("p_tag_id", Types.INTEGER),
+                        new SqlParameter("p_tag_type_id", Types.INTEGER),
+                        new SqlParameter("p_name", Types.VARCHAR),
+                        new SqlParameter("p_description", Types.VARCHAR));
 
         this.deleteCall = new SimpleJdbcCall(jdbc)
-            .withProcedureName("sp_tag_delete")
-            .declareParameters(
-                new SqlParameter("p_acting_user_id", Types.INTEGER),
-                new SqlParameter("p_tag_id", Types.INTEGER)
-            );
+                .withProcedureName("sp_tag_delete")
+                .declareParameters(
+                        new SqlParameter("p_acting_user_id", Types.INTEGER),
+                        new SqlParameter("p_tag_id", Types.INTEGER));
     }
 
     public List<TagDTO> getTagsByBuildId(Integer buildId) {
         MapSqlParameterSource params = new MapSqlParameterSource()
-            .addValue("p_build_id", buildId);
+                .addValue("p_build_id", buildId);
         Map<String, Object> result = findByBuildIdCall.execute(params);
         return (List<TagDTO>) result.get("tags");
     }
 
     public Integer createOrGetTag(Integer actingUserId, NewTagDTO tag) {
         MapSqlParameterSource params = new MapSqlParameterSource()
-            .addValue("p_acting_user_id", actingUserId)
-            .addValue("p_tag_type_id", tag.tagTypeId())
-            .addValue("p_name", tag.name())
-            .addValue("p_description", tag.description());
+                .addValue("p_acting_user_id", actingUserId)
+                .addValue("p_tag_type_id", tag.tagTypeId())
+                .addValue("p_name", tag.name())
+                .addValue("p_description", tag.description());
         Map<String, Object> result = createCall.execute(params);
         return ((Number) result.get("p_tag_id"))
                 .intValue();
@@ -97,17 +91,15 @@ public class TagDAO {
 
     private TagDTO mapTag(ResultSet rs) throws SQLException {
         return new TagDTO(
-            rs.getInt("tag_id"),
-            rs.getString("tag_name"),
-            rs.getString("tag_description"),
+                rs.getInt("tag_id"),
+                rs.getString("tag_name"),
+                rs.getString("tag_description"),
 
-            new TagTypeDTO(
-                rs.getInt("tag_type_id"),
-                rs.getString("tag_type_name"),
-                rs.getString("tag_type_description"),
-                rs.getString("tag_type_color")
-            )
-        );
+                new TagTypeDTO(
+                        rs.getInt("tag_type_id"),
+                        rs.getString("tag_type_name"),
+                        rs.getString("tag_type_description"),
+                        rs.getString("tag_type_color")));
     }
 
 }
