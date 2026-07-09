@@ -6,7 +6,7 @@
 
 CREATE TABLE file (
     file_id         INT UNSIGNED            NOT NULL    AUTO_INCREMENT,
-    name            VARCHAR(255),           NOT NULL,
+    name            VARCHAR(255)            NOT NULL,
     file_type       ENUM('IMAGE', 'VIDEO')  NOT NULL,
     hash            CHAR(64)                NOT NULL,
     path            VARCHAR(500)            NOT NULL,
@@ -18,6 +18,40 @@ CREATE TABLE file (
 
     CONSTRAINT pk_file              PRIMARY KEY (file_id),
     CONSTRAINT uq_file_hash         UNIQUE KEY (hash)
+);
+
+/*----------------------------------- IMAGE (DETAIL) ------------------------------------*/
+
+CREATE TABLE image (
+    image_id    INT UNSIGNED     NOT NULL,
+    width_px    INT UNSIGNED     NOT NULL,
+    height_px   INT UNSIGNED     NOT NULL,
+
+    CONSTRAINT pk_image             PRIMARY KEY (image_id),
+    CONSTRAINT fk_image_image_id     FOREIGN KEY (image_id)
+        REFERENCES file(file_id)
+            ON UPDATE CASCADE
+            ON DELETE CASCADE
+);
+
+/*----------------------------------- VIDEO (DETAIL) ------------------------------------*/
+
+CREATE TABLE video (
+    video_id                INT UNSIGNED     NOT NULL,
+    width_px                INT UNSIGNED     NOT NULL,
+    height_px               INT UNSIGNED     NOT NULL,
+    duration_seconds        INT UNSIGNED     NOT NULL,
+    thumbnail_image_id      INT UNSIGNED     NULL,
+
+    CONSTRAINT pk_video                     PRIMARY KEY (video_id),
+    CONSTRAINT fk_video_video_id            FOREIGN KEY (video_id)
+        REFERENCES file(file_id)
+            ON UPDATE CASCADE
+            ON DELETE CASCADE,
+    CONSTRAINT fk_video_thumbnail_image_id  FOREIGN KEY (thumbnail_image_id)
+        REFERENCES image(image_id)
+            ON UPDATE CASCADE
+            ON DELETE SET NULL
 );
 
 /*----------------------------------- USER ------------------------------------*/
@@ -41,7 +75,7 @@ CREATE TABLE user (
             ON UPDATE CASCADE
             ON DELETE RESTRICT,
     CONSTRAINT fk_user_pfp_image_id     FOREIGN KEY (pfp_image_id)
-        REFERENCES image (image_id)
+        REFERENCES image(image_id)
             ON UPDATE CASCADE
             ON DELETE SET NULL,
 
@@ -57,40 +91,6 @@ ALTER TABLE file
 
 ALTER TABLE file
     ADD INDEX idx_file_created_by (created_by);
-
-/*----------------------------------- IMAGE (DETAIL) ------------------------------------*/
-
-CREATE TABLE image (
-    image_id    INT UNSIGNED     NOT NULL,
-    width_px    INT UNSIGNED     NOT NULL,
-    height_px   INT UNSIGNED     NOT NULL,
-
-    CONSTRAINT pk_image             PRIMARY KEY (image_id),
-    CONSTRAINT fk_image_image_id     FOREIGN KEY (image_id)
-        REFERENCES file(file_id)
-            ON UPDATE CASCADE
-            ON DELETE CASCADE
-);
-
-/*----------------------------------- VIDEO (DETAIL) ------------------------------------*/
-
-CREATE video (
-    video_id                INT UNSIGNED     NOT NULL,
-    width_px                INT UNSIGNED     NOT NULL,
-    height_px               INT UNSIGNED     NOT NULL,
-    duration_seconds        INT UNSIGNED     NOT NULL,
-    thumbnail_image_id      INT UNSIGNED     NULL,
-
-    CONSTRAINT pk_video                     PRIMARY KEY (video_id),
-    CONSTRAINT fk_video_video_id            FOREIGN KEY (video_id)
-        REFERENCES file(file_id)
-            ON UPDATE CASCADE
-            ON DELETE CASCADE,
-    CONSTRAINT fk_video_thumbnail_image_id  FOREIGN KEY (thumbnail_image_id)
-        REFERENCES image(image_id)
-            ON UPDATE CASCADE
-            ON DELETE SET NULL
-);
 
 /*-------------------------------- SYSTEM USER -------------------------------------*/
 
@@ -665,7 +665,7 @@ CREATE TABLE conversation (
     CONSTRAINT fk_conversation_created_by   FOREIGN KEY (created_by)
         REFERENCES user(user_id)
             ON UPDATE CASCADE
-            ON UPDATE RESTRICT
+            ON DELETE RESTRICT
 );
 
 /*---------------------------------- CONVERSATION PARTICIPANT -----------------------------------*/
@@ -679,8 +679,9 @@ CREATE TABLE conversation_participant (
 
     CONSTRAINT pk_conversation_participant                  PRIMARY KEY (conversation_id, user_id),
     CONSTRAINT fk_conversation_participant_conversation_id  FOREIGN KEY (conversation_id)
-        ON UPDATE CASCADE
-        ON DELETE CASCADE,
+        REFERENCES conversation(conversation_id)
+            ON UPDATE CASCADE
+            ON DELETE CASCADE,
     CONSTRAINT fk_conversation_participant_user_id          FOREIGN KEY (user_id)
         REFERENCES user(user_id)
             ON UPDATE CASCADE
